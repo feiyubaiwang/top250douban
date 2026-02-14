@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>豆瓣Top250 x 你喜欢的电影</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500;700&family=Inter:wght@300;400;600&display=swap');
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #0f172a;
+            color: #F1EDE6;
+            overflow-x: hidden;
+        }
+
+        .serif {
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        /* 动态背景 */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #1B578C;
+            opacity: 1;
+            z-index: -1;
+        }
+
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 10s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        /* 卡片玻璃拟态 */
+        .glass-panel {
+            background: rgba(241, 237, 230, 0.02);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(241, 237, 230, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* 动画类 */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 选项交互 */
+        .option-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-card:hover {
+            background: rgba(165, 184, 208, 0.2);
+            border-color: rgba(165, 184, 208, 0.4);
+            transform: translateY(-2px);
+        }
+        .option-card.selected {
+            background: rgba(165, 184, 208, 0.3);
+            border-color: #A5B8D0;
+            box-shadow: 0 0 15px rgba(165, 184, 208, 0.3);
+        }
+
+        /* 自定义下拉框样式 */
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23A5B8D0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        .custom-select option {
+            background-color: #0f172a;
+            color: #F1EDE6;
+        }
+
+        /* 表格样式 */
+        .custom-table th {
+            background-color: #F1EDE6;
+            color: #1B578C;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.85rem;
+            padding: 1rem;
+        }
+        .custom-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        .custom-table tr:hover td {
+            background-color: rgba(0, 70, 128, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center selection:bg-[#004680] selection:text-white">
+
+    <!-- 氛围背景 -->
+    <div class="ambient-bg"></div>
+    <div class="ambient-orb bg-[#004680] w-96 h-96 top-[-10%] left-[-10%]"></div>
+    <div class="ambient-orb bg-[#003360] w-[500px] h-[500px] bottom-[-10%] right-[-10%]"></div>
+
+    <!-- 主容器 -->
+    <main id="app" class="w-full max-w-5xl px-4 py-8 relative min-h-[80vh] flex flex-col justify-center">
+        
+        <!-- 1. 欢迎页 -->
+        <section id="welcome-screen" class="space-y-8 fade-in">
+            <div class="max-w-xl mx-auto glass-panel rounded-none p-8 md:p-12 relative">
+                <p class="text-xl text-[#F1EDE6] leading-[2.5] serif">
+                    告别你的选片困难，<br>
+                    通过深度分析观影偏好，<br>
+                    在 <strong>豆瓣 Top 250</strong> 中找到你喜欢的电影。
+                </p>
+
+                <!-- 筛选区域 -->
+                <div class="mt-8 pt-8 border-t border-[rgba(241,237,230,0.1)]">
+                    <h3 class="text-sm text-[#A5B8D0] font-bold tracking-widest uppercase mb-4 flex items-center">
+                        <i class="fas fa-filter mr-2"></i> 选择范围
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- 年代筛选 -->
+                        <div class="relative">
+                            <select id="filter-era" class="custom-select w-full bg-[rgba(241,237,230,0.05)] border border-[rgba(241,237,230,0.2)] text-[#F1EDE6] text-sm py-3 px-4 rounded-none focus:outline-none focus:border-[#F1EDE6] transition-colors cursor-pointer">
+                                <option value="all">所有年代</option>
+                                <option value="old">经典老片 (1990前)</option>
+                                <option value="90s">黄金90年代 (1990-1999)</option>
+                                <option value="00s">千禧一代 (2000-2009)</option>
+                                <option value="new">新锐佳作 (2010后)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 地区筛选 -->
+                        <div class="relative">
+                            <select id="filter-region" class="custom-select w-full bg-[rgba(241,237,230,0.05)] border border-[rgba(241,237,230,0.2)] text-[#F1EDE6] text-sm py-3 px-4 rounded-none focus:outline-none focus:border-[#F1EDE6] transition-colors cursor-pointer">
+                                <option value="all">所有地区</option>
+                                <option value="Mainland">中国大陆</option>
+                                <option value="HK_TW">中国港台</option>
+                                <option value="USA">美国</option>
+                                <option value="Europe">欧洲</option>
+                                <option value="Asia_Other">其它</option>
+                            </select>
+                        </div>
+
+                        <!-- 时长筛选 -->
+                        <div class="relative">
+                            <select id="filter-duration" class="custom-select w-full bg-[rgba(241,237,230,0.05)] border border-[rgba(241,237,230,0.2)] text-[#F1EDE6] text-sm py-3 px-4 rounded-none focus:outline-none focus:border-[#F1EDE6] transition-colors cursor-pointer">
+                                <option value="all">所有时长</option>
+                                <option value="short">短片 (90分钟内)</option>
+                                <option value="medium">标准 (90-120分钟)</option>
+                                <option value="long">长片 (120分钟以上)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="app.startQuiz()" class="mt-8 w-full px-10 py-4 bg-[#F1EDE6] text-[#1B578C] border border-[#F1EDE6] text-lg rounded-none font-bold transition-all duration-300 hover:bg-white hover:translate-y-[-2px] shadow-lg flex items-center justify-center">
+                    开始匹配 <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+            
+            <div class="mt-8 text-xs text-[#F1EDE6] tracking-widest uppercase text-center opacity-60">
+                榜单数据每月更新一次
+            </div>
+        </section>
+
+        <!-- 2. 问答页 -->
+        <section id="quiz-screen" class="hidden w-full max-w-lg mx-auto">
+            <!-- 进度条 -->
+            <div class="w-full h-1 bg-slate-800 rounded-none mb-8 overflow-hidden">
+                <div id="progress-bar" class="h-full bg-gradient-to-r from-[#A5B8D0] to-[#A5B8D0] transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+
+            <div id="question-container" class="glass-panel rounded-none p-8 md:p-12 min-h-[500px] flex flex-col justify-center relative overflow-hidden">
+                
+                <span class="text-[#A5B8D0] text-sm font-bold tracking-widest uppercase mb-4 block">问题 <span id="q-current">1</span>/10</span>
+                
+                <h2 id="q-text" class="text-xl font-medium mb-8 serif leading-snug">
+                    <!-- 问题内容 -->
+                </h2>
+
+                <div id="options-grid" class="grid grid-cols-1 gap-4">
+                    <!-- 选项渲染区 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 加载/分析页 -->
+        <section id="loading-screen" class="hidden text-center space-y-6 fade-in w-full">
+            <h3 class="text-2xl serif text-[#F1EDE6]">正在从 <span id="filter-count-display" class="text-yellow-400 font-mono">250</span> 部电影中筛选...</h3>
+            <div id="analysis-text" class="text-[#A5B8D0] h-6 text-sm tracking-wider">匹配叙事节奏...</div>
+        </section>
+
+        <!-- 4. 结果页 (表格展示) -->
+        <section id="result-screen" class="hidden w-full fade-in pb-20">
+            <header class="text-center mb-8">
+                <h2 class="text-3xl md:text-4xl serif font-bold mb-3 text-[#F1EDE6]">你的深度匹配片单</h2>
+                
+                <!-- 新增：分析结果卡片 -->
+                <div id="analysis-card" class="mt-6 mb-8 mx-auto max-w-2xl bg-[rgba(241,237,230,0.02)] border border-[rgba(241,237,230,0.1)] rounded-none p-8 shadow-lg text-left">
+                    <h3 class="text-xl font-bold text-[#F1EDE6] serif mb-4">观影偏好分析</h3>
+                    <div id="analysis-tags" class="flex flex-wrap gap-2 mb-4">
+                        <!-- 动态标签 -->
+                    </div>
+                    <p id="analysis-content" class="text-[#A5B8D0] leading-relaxed text-sm md:text-base border-t border-[rgba(255,255,255,0.1)] pt-4">
+                        <!-- 动态分析文案 -->
+                    </p>
+                </div>
+                <button onclick="location.reload()" class="mt-2 px-5 py-2 rounded-none bg-[rgba(241,237,230,0.02)] text-sm text-[#F1EDE6] transition-colors border border-[rgba(241,237,230,0.1)] hover:bg-[#F1EDE6] hover:text-[#1B578C] hover:border-[#F1EDE6]">
+                    <i class="fas fa-redo mr-2"></i>重新测试
+                </button>
+            </header>
+
+            <div class="glass-panel rounded-none p-0 md:p-8 shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse custom-table whitespace-nowrap md:whitespace-normal">
+                        <thead>
+                            <tr>
+                                <th class="w-16 text-center font-mono">NO.</th>
+                                <th class="w-20 text-center">契合度</th>
+                                <th class="w-20 text-center">Top250</th>
+                                <th class="w-64">电影名称</th>
+                                <th class="w-32 text-center hidden md:table-cell">地区/时长</th>
+                                <th class="hidden lg:table-cell">核心短评</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movie-table-body" class="text-sm md:text-base text-slate-300">
+                            <!-- 电影行将在这里渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 加载更多按钮 -->
+                <div class="text-center py-6 border-t border-[rgba(148,163,184,0.1)]">
+                    <button id="load-more-btn" onclick="app.loadMore()" class="px-10 py-3 bg-[rgba(241,237,230,0.02)] border border-[#F1EDE6] text-[#F1EDE6] text-lg rounded-none font-medium transition-all duration-300 hover:bg-[#F1EDE6] hover:text-[#1B578C] hover:border-[#F1EDE6] hover:translate-y-[-2px] active:bg-[rgba(241,237,230,0.8)] active:text-[#1B578C] active:border-[#F1EDE6]">
+                        加载更多电影
+                    </button>
+                    <div class="mt-3 text-xs text-slate-500">
+                        显示 <span id="display-count">0</span> / <span id="total-filtered-count">0</span> 部
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 完整 Top 250 数据 ---
+        const rawData = [
+            "1|肖申克的救赎|1994|9.7|6,5,4,3,6,5|希望是美好的，也许是人间至善。",
+            "2|霸王别姬|1993|9.6|2,4,6,2,7,5|不疯魔不成活。",
+            "3|泰坦尼克号|1997|9.5|4,6,3,4,7,6|You jump, I jump.",
+            "4|阿甘正传|1994|9.5|8,6,3,4,4,5|生活就像一盒巧克力。",
+            "5|千与千寻|2001|9.4|7,6,5,10,3,7|不能吃太胖哦，会被杀掉的！",
+            "6|美丽人生|1997|9.6|5,6,4,3,6,6|早安，公主！",
+            "7|星际穿越|2014|9.4|5,7,9,9,6,9|爱是唯一可以超越时间与空间的事物。",
+            "8|这个杀手不太冷|1994|9.4|6,7,4,3,7,5|人生总是这么痛苦吗？",
+            "9|盗梦空间|2010|9.4|5,9,10,9,8,8|既然做梦，就做大点。",
+            "10|楚门的世界|1998|9.4|6,6,7,5,3,6|假如再也碰不到你，祝你早、午、晚都安。",
+            "11|辛德勒的名单|1993|9.5|1,4,5,1,8,5|救人一命，即救全世界。",
+            "12|忠犬八公的故事|2009|9.4|4,2,1,2,1,8|它只是你的一条狗，但你是它的一生。",
+            "13|海上钢琴师|1998|9.3|3,3,6,3,5,6|陆地对我来说太大了。",
+            "14|疯狂动物城|2016|9.2|9,8,3,8,4,9|Try Everything.",
+            "15|三傻大闹宝莱坞|2009|9.2|9,6,4,4,3,8|All is well.",
+            "16|机器人总动员|2008|9.3|8,5,2,9,2,8|I don't want to survive, I want to live.",
+            "17|放牛班的春天|2004|9.3|7,4,3,3,2,7|永不放弃，总有希望在前面等待。",
+            "18|无间道|2002|9.3|3,8,7,3,7,7|我想做个好人。",
+            "19|控方证人|1957|9.6|5,5,8,3,4,2|由于影片结尾过于精彩，请大家不要剧透。",
+            "20|大话西游之大圣娶亲|1995|9.2|5,7,6,7,5,5|我希望是一万年。",
+            "21|寻梦环游记|2017|9.1|8,6,4,9,4,9|在爱的记忆消失前，请记住我。",
+            "22|熔炉|2011|9.3|1,5,4,1,9,8|我们一路奋战，不是为了改变世界，而是为了不让世界改变我们。",
+            "23|触不可及|2011|9.3|9,5,3,3,2,8|有时候你必须进入别人的世界，去发现自己的世界还缺少什么。",
+            "24|教父|1972|9.3|3,3,7,2,8,3|我会给他一个无法拒绝的理由。",
+            "25|末代皇帝|1987|9.3|3,3,6,2,4,4|皇上，您是紫禁城里唯一的男人。",
+            "26|当幸福来敲门|2006|9.3|6,5,3,2,4,7|如果你有梦想，就要捍卫它。",
+            "27|哈利·波特与魔法石|2001|9.2|8,6,4,10,4,7|霍格沃茨永远欢迎你回家。",
+            "28|龙猫|1988|9.2|10,2,1,8,1,4|生活坏到一定程度就会好起来。",
+            "29|活着|1994|9.3|1,3,5,1,7,5|人是为了活着本身而活着。",
+            "30|怦然心动|2010|9.1|9,4,2,3,1,8|斯人若彩虹，遇上方知有。",
+            "31|蝙蝠侠：黑暗骑士|2008|9.2|3,9,7,6,9,8|Why so serious?",
+            "32|指环王3：王者无敌|2003|9.3|5,8,6,9,9,7|为了佛罗多。",
+            "33|我不是药神|2018|9.0|5,6,4,1,6,9|世界上只有一种病，穷病。",
+            "34|乱世佳人|1939|9.3|5,4,5,2,5,1|Tomorrow is another day.",
+            "35|让子弹飞|2010|9.0|8,8,7,4,7,8|站着，还把钱挣了。",
+            "36|飞屋环游记|2009|9.1|8,6,3,8,3,8|Thanks for the adventure.",
+            "37|哈尔的移动城堡|2004|9.1|8,6,5,9,4,7|世界这么大，人生这么长，总会有这么一个人，让你想要温柔的对待。",
+            "38|十二怒汉|1957|9.4|4,5,7,2,5,2|无论如何，这总是个合理的怀疑。",
+            "39|海蒂和爷爷|2015|9.2|10,3,1,3,1,9|如果生活中有什么使你感到快乐，那就去做吧。",
+            "40|素媛|2013|9.3|1,4,3,1,8,9|最孤独的人最亲切。",
+            "41|猫鼠游戏|2002|9.1|8,8,6,3,4,7|两只小老鼠掉进了奶油桶里...",
+            "42|天空之城|1986|9.2|8,6,3,10,4,4|我们的孤独就像天空中漂浮的城市。",
+            "43|鬼子来了|2000|9.3|4,6,6,2,7,7|大哥大嫂过年好！",
+            "44|摔跤吧！爸爸|2016|9.0|8,7,4,3,6,9|你的胜利不是你一个人的。",
+            "45|少年派的奇幻漂流|2012|9.1|5,5,8,8,6,9|人生就是不断地放下。",
+            "46|钢琴家|2002|9.3|2,4,4,1,8,7|音乐是他唯一的生存支柱。",
+            "47|指环王2：双塔奇兵|2002|9.2|5,8,6,9,9,7|黎明前的黑暗。",
+            "48|死亡诗社|1989|9.2|5,4,5,3,4,4|O Captain! My Captain!",
+            "49|大话西游之月光宝盒|1995|9.0|6,7,5,7,4,5|般若波罗蜜！",
+            "50|何以为家|2018|9.1|1,6,3,1,7,9|我要起诉我父母，因为他们生下了我。",
+            "51|绿皮书|2018|8.9|8,5,3,2,3,9|世界上孤独的人都害怕迈出第一步。",
+            "52|闻香识女人|1992|9.2|7,4,4,3,4,5|此时此刻，我能在你身上看到那个未来。",
+            "53|大闹天宫|1961|9.4|9,7,2,9,5,2|孩儿们，操练起来！",
+            "54|黑客帝国|1999|9.1|4,8,9,9,8,6|Welcome to the real world.",
+            "55|指环王1：护戒使者|2001|9.1|5,7,6,9,8,7|即使是最小的人也能改变未来的进程。",
+            "56|罗马假日|1953|9.1|9,3,2,3,1,2|我将永远珍惜我在这个城市的记忆。",
+            "57|教父2|1974|9.3|2,3,8,2,7,3|亲近你的朋友，但更要亲近你的敌人。",
+            "58|狮子王|1994|9.1|7,6,3,7,5,5|Hakuna Matata.",
+            "59|天堂电影院|1988|9.2|6,3,4,3,2,4|人生和电影不一样，人生难多了。",
+            "60|饮食男女|1994|9.2|7,3,4,1,2,5|人生不能像做菜，把所有的料都准备好了才下锅。",
+            "61|辩护人|2013|9.2|3,6,5,1,6,9|岩石再坚硬也是死的，鸡蛋再脆弱也是活生命的。",
+            "62|本杰明·巴顿奇事|2008|9.0|5,4,6,8,3,8|我们注定要失去我们所爱的人，不然又如何知道他们在我们生命中有多重要？",
+            "63|搏击俱乐部|1999|9.0|3,8,9,2,9,6|我们是被历史遗忘的一代。",
+            "64|美丽心灵|2001|9.1|6,5,6,3,5,7|你是我存在的理由。",
+            "65|穿条纹睡衣的男孩|2008|9.2|2,4,4,2,7,8|不仅是围栏，也是心灵的隔阂。",
+            "66|情书|1995|8.9|4,2,5,3,2,5|你好吗？我很好。",
+            "67|哈利·波特与死亡圣器(下)|2011|8.9|5,8,5,10,8,8|Always.",
+            "68|两杆大烟枪|1998|9.1|7,9,8,3,7,6|这是把古董枪。",
+            "69|窃听风暴|2006|9.2|3,4,5,1,5,7|献给好人奏鸣曲。",
+            "70|音乐之声|1965|9.1|9,4,2,2,1,2|Do-Re-Mi.",
+            "71|功夫|2004|8.8|9,8,4,7,8,7|想学啊？我教你啊。",
+            "72|哈利·波特与阿兹卡班的囚徒|2004|8.8|7,7,5,10,6,7|Expecto Patronum!",
+            "73|西西里的美丽传说|2000|8.9|4,4,4,2,6,7|美丽是原罪。",
+            "74|阿凡达|2009|8.8|5,9,6,9,8,8|I see you.",
+            "75|看不见的客人|2016|8.8|4,8,8,3,6,9|没有痛苦，就没有拯救。",
+            "76|拯救大兵瑞恩|1998|9.1|4,8,4,1,10,6|我值得吗？",
+            "77|沉默的羔羊|1991|8.9|2,7,6,3,9,5|你好啊，克拉丽斯。",
+            "78|小鞋子|1997|9.2|8,4,2,2,2,6|因为贫穷，所以奔跑。",
+            "79|布达佩斯大饭店|2014|8.9|8,7,5,6,4,9|在野蛮的屠宰场里，还有微弱的文明之光。",
+            "80|蝴蝶效应|2004|8.9|3,8,9,8,7,7|由于过去，现在和未来。",
+            "81|飞越疯人院|1975|9.1|3,5,6,2,7,3|你们一直抱怨这个地方，但是你们没有勇气走出这里。",
+            "82|禁闭岛|2010|8.9|2,7,9,5,7,8|像怪物一样活着，还是像好人一样死去？",
+            "83|还有明天|2023|9.3|2,5,7,3,4,9|无论发生什么，明天太阳照常升起。",
+            "84|心灵捕手|1997|8.9|7,5,4,3,4,6|这不是你的错。",
+            "85|致命魔术|2006|8.9|3,8,9,6,7,7|你仔细看了吗？",
+            "86|低俗小说|1994|8.9|7,6,9,4,8,5|Mmm, this is a tasty burger!",
+            "87|超脱|2011|9.0|1,3,6,1,5,8|我的灵魂与我之间的距离如此遥远。",
+            "88|哈利·波特与密室|2002|8.8|7,6,4,10,5,7|决定我们成为什么样人的，不是我们的能力，而是我们的选择。",
+            "89|一一|2000|9.1|5,1,6,1,1,7|电影发明以后，人类的生命延长了三倍。",
+            "90|喜剧之王|1999|8.8|6,4,3,2,3,6|我养你啊！",
+            "91|摩登时代|1936|9.3|8,6,3,2,3,1|Buck up - never say die.",
+            "92|杀人回忆|2003|8.9|2,6,7,1,8,7|你现在吃饭香吗？",
+            "93|致命ID|2003|8.9|2,8,9,3,8,7|当我上楼时，碰见一个原本不在那里的人。",
+            "94|春光乍泄|1997|9.0|3,3,5,2,4,6|不如我们从头来过。",
+            "95|加勒比海盗|2003|8.8|8,8,4,8,6,7|But you have heard of me.",
+            "96|海豚湾|2009|9.3|2,6,3,1,6,8|如果你不能改变它，你就记录它。",
+            "97|美国往事|1984|9.2|3,2,7,2,6,4|当你年轻时，岁月是那么漫长。",
+            "98|红辣椒|2006|9.1|7,9,10,10,5,7|梦境的游行。",
+            "99|七宗罪|1995|8.8|1,6,6,3,9,5|世界是美好的，值得我们为之奋斗。我只同意后半句。",
+            "100|唐伯虎点秋香|1993|8.7|9,7,3,5,4,5|别人笑我太疯癫，我笑他人看不穿。",
+            "101|狩猎|2012|9.1|1,5,4,1,8,9|枪响了，你看到是谁开的枪吗？",
+            "102|幽灵公主|1997|8.9|5,7,6,9,6,6|活下去。",
+            "103|甜蜜蜜|1996|8.9|5,4,4,2,3,6|有些爱，只能止于唇齿，掩于岁月。",
+            "104|寄生虫|2019|8.8|3,7,6,2,8,10|钱就是熨斗，把一切烫平了。",
+            "105|蝙蝠侠：黑暗骑士崛起|2012|8.9|4,9,6,6,9,9|A hero can be anyone.",
+            "106|天书奇谭|1983|9.2|8,6,4,8,4,4|这才是中国动画。",
+            "107|7号房的礼物|2013|8.9|3,4,3,2,5,9|爸爸，谢谢你让我生出来。",
+            "108|超能陆战队|2014|8.7|9,7,3,8,4,8|Hello, I am Baymax.",
+            "109|第六感|1999|8.9|2,4,7,5,6,6|I see dead people.",
+            "110|爱在黎明破晓前|1995|8.8|8,3,2,2,1,5|我喜欢我望向别处时，你落在我身上的目光。",
+            "111|茶馆|1982|9.6|2,3,6,1,5,4|我爱咱们的国呀，可是谁爱我呢？",
+            "112|爱在日落黄昏时|2004|8.9|7,3,2,2,2,7|记忆是美好的，只要你让它过去。",
+            "113|被嫌弃的松子的一生|2006|8.9|2,6,6,6,7,7|生而为人，我很抱歉。",
+            "114|哈利·波特与火焰杯|2005|8.7|7,7,5,10,7,7|Dark and difficult times lie ahead.",
+            "115|重庆森林|1994|8.8|5,4,7,3,4,5|每天你都有机会和很多人擦身而过。",
+            "116|未麻的部屋|1997|9.1|1,6,9,6,8,6|由于你，真正的你。",
+            "117|头脑特工队|2015|8.8|9,7,8,9,4,9|哭泣能让我慢下来，感受生活重量。",
+            "118|借东西的小人阿莉埃蒂|2010|8.9|9,3,2,9,1,8|不要忘记我。",
+            "119|入殓师|2008|8.9|4,2,3,1,2,8|死可能是一道门，逝去并不是终结，而是超越。",
+            "120|菊次郎的夏天|1999|8.9|9,3,2,3,2,6|先生，你叫什么名字？",
+            "121|断背山|2005|8.8|3,3,4,2,4,7|I wish I knew how to quit you.",
+            "122|剪刀手爱德华|1990|8.7|5,4,4,8,3,5|如果我没有刀，我就不能保护你。",
+            "123|勇敢的心|1995|8.9|5,7,4,2,9,5|Freedom!",
+            "124|时空旅恋人|2013|8.8|9,4,4,5,2,9|我们一起度过的每一天，都是穿越。",
+            "125|消失的爱人|2014|8.7|3,6,7,2,8,9|婚姻就是互相控制。",
+            "126|无人知晓|2004|9.1|1,2,3,1,2,7|当早晨到来，并不意味着一切都会变好。",
+            "127|驯龙高手|2010|8.8|9,8,3,8,5,8|这是博克岛。",
+            "128|倩女幽魂|1987|8.8|4,6,4,8,5,4|十里平湖霜满天。",
+            "129|傲慢与偏见|2005|8.7|7,3,4,2,3,7|你甚至没有想过去理解我。",
+            "130|花样年华|2000|8.8|3,2,6,2,3,7|如果多一张船票，你会不会跟我走？",
+            "131|新世界|2013|8.9|3,7,6,2,9,9|嘿，兄弟。",
+            "132|完美的世界|1993|9.1|4,5,4,2,6,5|我这辈子只杀过两个人，一个是伤害我妈妈的人，一个是伤害你的人。",
+            "133|玩具总动员3|2010|8.9|8,6,3,8,4,8|So long, partner.",
+            "134|一个叫欧维的男人决定去死|2015|8.9|7,4,4,2,3,9|命运是萨博，人生是沃尔沃。",
+            "135|阳光灿烂的日子|1994|8.8|7,5,5,3,6,5|那时候的阳光太强烈了。",
+            "136|色，戒|2007|8.7|2,4,7,2,8,8|快走。",
+            "137|小森林 夏秋篇|2014|9.0|10,1,1,1,1,9|在大自然中感受时间的流逝。",
+            "138|怪兽电力公司|2001|8.8|9,7,3,9,3,7|Kitty!",
+            "139|天使爱美丽|2001|8.7|9,6,5,7,2,7|没有你，良辰美景更与何人说。",
+            "140|教父3|1990|9.0|3,3,7,2,8,5|Just when I thought I was out, they pull me back in.",
+            "141|侧耳倾听|1995|8.9|9,4,2,4,2,5|因为你，我愿意成为一个更好的人。",
+            "142|哪吒闹海|1979|9.2|6,6,4,8,6,3|爹爹，你的骨肉我还给你！",
+            "143|九品芝麻官|1994|8.7|9,7,4,3,5,5|常威，你还说你不会武功？",
+            "144|请以你的名字呼唤我|2017|8.8|7,2,3,2,3,9|因为是你，因为是我。",
+            "145|被解救的姜戈|2012|8.8|4,8,6,3,9,9|The D is silent.",
+            "146|幸福终点站|2004|8.8|8,5,3,2,2,7|我在此等候。",
+            "147|釜山行|2016|8.6|2,9,4,3,9,9|爸爸，不要走。",
+            "148|神偷奶爸|2010|8.7|9,7,3,7,4,8|It's so fluffy!",
+            "149|小森林 冬春篇|2015|9.0|10,1,1,1,1,9|寒冷是调味剂。",
+            "150|喜宴|1993|9.0|7,4,5,1,4,5|你正见识到五千年性压抑的结果。",
+            "151|萤火之森|2011|8.9|4,3,2,8,2,8|一旦触碰，就会消失。",
+            "152|告白|2010|8.8|1,6,7,4,9,8|听到重要东西消失的声音了吗？",
+            "153|玛丽和麦克斯|2009|8.9|3,4,3,6,4,8|每个人的人生都是一条长长的人行道。",
+            "154|七武士|1954|9.3|3,4,6,2,7,2|我们又失败了，赢的是农民。",
+            "155|头号玩家|2018|8.6|8,9,4,10,7,9|谢谢你玩我的游戏。",
+            "156|模仿游戏|2014|8.8|5,6,6,2,6,9|有时候，正是那些人们认为无用的人，成就了无人能及的成就。",
+            "157|惊魂记|1960|9.0|2,6,6,3,8,2|我们都会偶尔发疯。",
+            "158|大鱼|2003|8.8|8,5,7,9,4,7|一个讲了无数次故事的人，最后自己也变成了故事。",
+            "159|射雕英雄传之东成西就|1993|8.7|10,7,4,5,3,5|香蕉你个巴拉！",
+            "160|心灵奇旅|2020|8.7|9,6,5,8,4,10|火花不是人生目标，当你想要生活的那一刻，火花就已经被点燃。",
+            "161|血战钢锯岭|2016|8.7|4,8,4,2,10,9|Lord, help me get one more.",
+            "162|你的名字。|2016|8.5|8,7,6,8,4,9|不管你在世界的哪个地方，我一定会，去见你。",
+            "163|背靠背，脸对脸|1994|9.5|3,4,8,1,4,5|官场现形记。",
+            "164|我是山姆|2001|9.0|7,4,3,2,3,7|Love is all you need.",
+            "165|阳光姐妹淘|2011|8.8|9,6,3,2,4,8|再多各自牛逼的时光，也比不上一起傻逼的岁月。",
+            "166|机器人之梦|2023|9.0|8,4,3,7,3,10|Do you remember September?",
+            "167|恐怖直播|2013|8.7|2,9,5,2,9,9|这就结束了吗？",
+            "168|黑客帝国3：矩阵革命|2003|8.8|4,8,8,9,8,7|Everything that has a beginning has an end.",
+            "169|小丑|2019|8.7|1,5,6,3,9,10|我曾以为我的人生是场悲剧，现在我意识到，它其实是一场喜剧。",
+            "170|三块广告牌|2017|8.7|3,5,6,2,8,9|愤怒会招致更深的愤怒。",
+            "171|谍影重重3|2007|8.8|3,9,6,3,8,8|Look at us. Look at what they make you give.",
+            "172|电锯惊魂|2004|8.7|1,8,7,3,10,7|Game over.",
+            "173|末路狂花|1991|8.9|5,7,5,3,7,5|Let's keep going.",
+            "174|高山下的花环|1984|9.5|2,5,4,1,8,4|位卑未敢忘忧国。",
+            "175|无间道2|2003|8.7|3,6,7,3,6,7|出来混，迟早要还的。",
+            "176|达拉斯买家俱乐部|2013|8.8|3,5,5,2,6,9|有时候，我们要为了活着而违法。",
+            "177|疯狂原始人|2013|8.7|9,8,3,7,5,9|Don't hide, live.",
+            "178|绿里奇迹|1999|8.9|3,4,5,6,5,6|我累了，老板。",
+            "179|爱在午夜降临前|2013|8.9|6,3,3,1,3,9|这就是真爱，如果你看不出来，那你就是瞎了。",
+            "180|疯狂的石头|2006|8.6|8,8,7,3,5,7|素质，注意你的素质！",
+            "181|雨中曲|1952|9.1|10,5,3,4,2,2|Singin' in the Rain.",
+            "182|2001太空漫游|1968|8.9|4,2,10,10,4,3|I'm sorry, Dave.",
+            "183|海街日记|2015|8.8|9,2,3,1,1,9|活着的东西都是很费功夫的。",
+            "184|风之谷|1984|8.9|7,6,4,9,5,4|带上防毒面具！",
+            "185|上帝之城|2002|9.0|2,8,7,2,9,7|被上帝抛弃的地方。",
+            "186|心迷宫|2014|8.7|3,6,8,2,5,9|有些秘密，最好永远埋葬。",
+            "187|英雄本色|1986|8.6|4,7,4,2,8,4|我不做大哥好多年了。",
+            "188|记忆碎片|2000|8.7|3,6,10,3,7,7|我们要记忆来确认自己的身份。",
+            "189|纵横四海|1991|8.8|8,7,4,3,6,5|钵仔糕。",
+            "190|无敌破坏王|2012|8.7|9,7,4,8,4,9|我是坏人，那又怎样？",
+            "191|卢旺达饭店|2004|8.9|1,6,5,1,9,7|如果不如果不如果不……",
+            "192|小偷家族|2018|8.7|4,3,5,2,4,9|因为我们没有钱，所以我们偷东西。",
+            "193|东京教父|2003|8.9|8,6,5,5,4,7|奇迹是会发生的。",
+            "194|恐怖游轮|2009|8.5|2,8,9,6,8,8|History repeats itself.",
+            "195|牯岭街少年杀人事件|1991|8.9|2,3,8,1,8,5|我就像这个世界，是不会变的。",
+            "196|冰川时代|2002|8.6|9,6,3,7,3,7|Diego, spit that out!",
+            "197|魔女宅急便|1989|8.7|9,5,3,8,2,4|虽然有失落的时候，但我现在很好。",
+            "198|芙蓉镇|1986|9.3|1,4,6,1,7,4|活下去，像牲口一样活下去。",
+            "199|忠犬八公物语|1987|9.2|2,2,3,2,3,4|为了等待主人，它在车站等了十年。",
+            "200|岁月神偷|2010|8.7|4,3,3,2,3,8|做人，总要信。",
+            "201|荒蛮故事|2014|8.8|6,8,5,4,9,9|失控的复仇。",
+            "202|遗愿清单|2007|8.7|9,5,3,2,2,8|Find the joy in your life.",
+            "203|大佛普拉斯|2017|8.7|3,4,6,2,5,9|有钱人的世界是彩色的，没钱人的世界是黑白的。",
+            "204|源代码|2011|8.5|6,8,7,6,7,8|Everything is gonna be okay.",
+            "205|花束般的恋爱|2021|8.6|5,3,3,1,2,10|开始是结束的开始。",
+            "206|疯狂的麦克斯4：狂暴之路|2015|8.7|5,10,3,8,10,9|Witness me!",
+            "207|你看起来好像很好吃|2010|8.9|9,5,2,7,3,8|因为你看起来好像很好吃。",
+            "208|白日梦想家|2013|8.6|8,5,4,5,4,9|To see the world, things dangerous to come to.",
+            "209|贫民窟的百万富翁|2008|8.6|6,7,5,3,6,8|It is written.",
+            "210|可可西里|2004|8.9|1,6,4,1,9,7|见过磕长头的人吗？",
+            "211|城市之光|1931|9.3|8,5,3,2,3,1|Tomorrow the birds will sing.",
+            "212|波西米亚狂想曲|2018|8.6|8,7,4,2,8,9|We are the champions.",
+            "213|爆裂鼓手|2014|8.7|2,9,4,2,9,9|There are no two words in the English language more harmful than 'good job'.",
+            "214|东邪西毒|1994|8.6|3,3,8,4,4,5|当你不能够再拥有，你唯一可以做的，就是令自己不要忘记。",
+            "215|爱乐之城|2016|8.4|7,6,4,3,4,9|Here's to the ones who dream.",
+            "216|青蛇|1993|8.6|4,5,6,6,7,5|跟有情人做快乐事，别问是劫是缘。",
+            "217|哈利·波特与死亡圣器(上)|2010|8.4|4,6,5,9,6,8|These are dark times, there is no denying.",
+            "218|无耻混蛋|2009|8.7|3,7,6,4,9,8|Bongiorno.",
+            "219|终结者2：审判日|1991|8.8|5,9,5,6,9,5|Hasta la vista, baby.",
+            "220|大红灯笼高高挂|1991|8.8|2,3,6,2,7,5|点灯，灭灯。",
+            "221|黑天鹅|2010|8.6|2,7,8,4,9,8|I just want to be perfect.",
+            "222|新龙门客栈|1992|8.7|6,8,5,3,8,5|人说乱世莫诉儿女情，其实乱世儿女情更深。",
+            "223|初恋这件小事|2010|8.5|9,5,2,2,2,8|学长，我喜欢你！",
+            "224|人工智能|2001|8.7|4,4,6,9,4,7|Please make me real.",
+            "225|千钧一发|1997|8.8|4,5,7,8,4,6|我从未为游回来保留体力。",
+            "226|崖上的波妞|2008|8.6|9,5,3,9,2,8|波妞喜欢宗介。",
+            "227|雨人|1988|8.7|6,4,4,2,3,4|One for bad, two for good.",
+            "228|虎口脱险|1966|8.9|10,6,4,3,4,2|Tea for two.",
+            "229|哈利·波特与凤凰社|2007|8.5|6,7,5,10,7,8|We've all got both light and dark inside us.",
+            "230|罗生门|1950|8.8|2,4,9,2,6,1|人是不会说实话的。",
+            "231|彗星来的那一夜|2013|8.6|3,6,10,5,5,9|这里有无数个我们。",
+            "232|海边的曼彻斯特|2016|8.6|2,2,4,2,2,9|I can't beat it.",
+            "233|恋恋笔记本|2004|8.5|8,4,3,2,4,7|If you're a bird, I'm a bird.",
+            "234|真爱至上|2003|8.6|9,5,5,2,2,7|To me, you are perfect.",
+            "235|火星救援|2015|8.5|8,7,4,9,5,9|I'm gonna science the shit out of this.",
+            "236|黑客帝国2：重装上阵|2003|8.7|4,8,8,9,8,7|Choice is an illusion.",
+            "237|步履不停|2008|8.8|6,2,5,1,1,8|人生路上步履不停，为何总是慢一拍。",
+            "238|奇迹男孩|2017|8.6|9,4,3,2,2,9|如果要在正确和善良中选择，请选择善良。",
+            "239|千年女优|2001|8.8|6,8,9,8,5,7|我喜欢追寻着那个人的自己。",
+            "240|冰雪奇缘|2013|8.5|9,7,3,9,4,9|Let it go.",
+            "241|战争之王|2005|8.7|3,6,5,2,7,7|Selling guns is like selling vacuum cleaners.",
+            "242|谍影重重2|2004|8.7|3,8,6,3,8,7|Get some rest, Pam.",
+            "243|蜘蛛侠：平行宇宙|2018|8.6|9,9,5,9,6,9|Anyone can wear the mask.",
+            "244|攻壳机动队|1995|9.1|2,6,9,10,8,6|网路是无限的。",
+            "245|血钻|2006|8.7|3,8,5,3,9,7|TIA, This is Africa.",
+            "246|魂断蓝桥|1940|8.8|2,3,4,2,3,1|友谊地久天长。",
+            "247|隐藏人物|2016|8.9|8,5,4,2,5,9|我们在NASA尿同样的尿。",
+            "248|小姐|2016|8.5|4,6,8,3,8,9|我的玉子。",
+            "249|房间|2015|8.8|5,4,4,2,7,9|再见，房间。",
+            "250|血观音|2017|8.5|1,5,8,3,9,9|世上最可怕的不是眼前的刑罚，而是无爱的未来。"
+        ];
+
+        // --- 数据解析与增强 ---
+        // 完整的 250 部电影元数据 (Region & Duration)
+        const metadata = {
+            "1": { region: "USA", duration: 142 }, "2": { region: "Mainland", duration: 171 }, "3": { region: "USA", duration: 194 }, "4": { region: "USA", duration: 142 }, "5": { region: "Asia_Other", duration: 125 }, "6": { region: "Europe", duration: 116 }, "7": { region: "USA", duration: 169 }, "8": { region: "Europe", duration: 110 }, "9": { region: "USA", duration: 148 }, "10": { region: "USA", duration: 103 },
+            "11": { region: "USA", duration: 195 }, "12": { region: "USA", duration: 93 }, "13": { region: "Europe", duration: 165 }, "14": { region: "USA", duration: 108 }, "15": { region: "Asia_Other", duration: 170 }, "16": { region: "USA", duration: 98 }, "17": { region: "Europe", duration: 97 }, "18": { region: "HK_TW", duration: 101 }, "19": { region: "USA", duration: 116 }, "20": { region: "HK_TW", duration: 95 },
+            "21": { region: "USA", duration: 105 }, "22": { region: "Asia_Other", duration: 125 }, "23": { region: "Europe", duration: 112 }, "24": { region: "USA", duration: 175 }, "25": { region: "Europe", duration: 163 }, "26": { region: "USA", duration: 117 }, "27": { region: "USA", duration: 152 }, "28": { region: "Asia_Other", duration: 86 }, "29": { region: "Mainland", duration: 132 }, "30": { region: "USA", duration: 90 },
+            "31": { region: "USA", duration: 152 }, "32": { region: "USA", duration: 201 }, "33": { region: "Mainland", duration: 117 }, "34": { region: "USA", duration: 238 }, "35": { region: "Mainland", duration: 132 }, "36": { region: "USA", duration: 96 }, "37": { region: "Asia_Other", duration: 119 }, "38": { region: "USA", duration: 96 }, "39": { region: "Europe", duration: 111 }, "40": { region: "Asia_Other", duration: 122 },
+            "41": { region: "USA", duration: 141 }, "42": { region: "Asia_Other", duration: 124 }, "43": { region: "Mainland", duration: 139 }, "44": { region: "Asia_Other", duration: 161 }, "45": { region: "USA", duration: 127 }, "46": { region: "Europe", duration: 150 }, "47": { region: "USA", duration: 179 }, "48": { region: "USA", duration: 128 }, "49": { region: "HK_TW", duration: 87 }, "50": { region: "Asia_Other", duration: 126 },
+            "51": { region: "USA", duration: 130 }, "52": { region: "USA", duration: 156 }, "53": { region: "Mainland", duration: 114 }, "54": { region: "USA", duration: 136 }, "55": { region: "USA", duration: 178 }, "56": { region: "USA", duration: 118 }, "57": { region: "USA", duration: 202 }, "58": { region: "USA", duration: 88 }, "59": { region: "Europe", duration: 155 }, "60": { region: "HK_TW", duration: 124 },
+            "61": { region: "Asia_Other", duration: 127 }, "62": { region: "USA", duration: 166 }, "63": { region: "USA", duration: 139 }, "64": { region: "USA", duration: 135 }, "65": { region: "Europe", duration: 94 }, "66": { region: "Asia_Other", duration: 117 }, "67": { region: "USA", duration: 130 }, "68": { region: "Europe", duration: 107 }, "69": { region: "Europe", duration: 137 }, "70": { region: "USA", duration: 172 },
+            "71": { region: "HK_TW", duration: 99 }, "72": { region: "USA", duration: 142 }, "73": { region: "Europe", duration: 109 }, "74": { region: "USA", duration: 162 }, "75": { region: "Europe", duration: 106 }, "76": { region: "USA", duration: 169 }, "77": { region: "USA", duration: 118 }, "78": { region: "Asia_Other", duration: 89 }, "79": { region: "USA", duration: 99 }, "80": { region: "USA", duration: 113 },
+            "81": { region: "USA", duration: 133 }, "82": { region: "USA", duration: 138 }, "83": { region: "Europe", duration: 118 }, "84": { region: "USA", duration: 126 }, "85": { region: "USA", duration: 130 }, "86": { region: "USA", duration: 154 }, "87": { region: "USA", duration: 98 }, "88": { region: "USA", duration: 161 }, "89": { region: "HK_TW", duration: 173 }, "90": { region: "HK_TW", duration: 85 },
+            "91": { region: "USA", duration: 87 }, "92": { region: "Asia_Other", duration: 131 }, "93": { region: "USA", duration: 90 }, "94": { region: "HK_TW", duration: 96 }, "95": { region: "USA", duration: 143 }, "96": { region: "USA", duration: 92 }, "97": { region: "USA", duration: 229 }, "98": { region: "Asia_Other", duration: 90 }, "99": { region: "USA", duration: 127 }, "100": { region: "HK_TW", duration: 102 },
+            "101": { region: "Europe", duration: 115 }, "102": { region: "Asia_Other", duration: 134 }, "103": { region: "HK_TW", duration: 118 }, "104": { region: "Asia_Other", duration: 132 }, "105": { region: "USA", duration: 164 }, "106": { region: "Mainland", duration: 89 }, "107": { region: "Asia_Other", duration: 127 }, "108": { region: "USA", duration: 102 }, "109": { region: "USA", duration: 107 }, "110": { region: "USA", duration: 101 },
+            "111": { region: "Mainland", duration: 118 }, "112": { region: "USA", duration: 80 }, "113": { region: "Asia_Other", duration: 130 }, "114": { region: "USA", duration: 157 }, "115": { region: "HK_TW", duration: 102 }, "116": { region: "Asia_Other", duration: 81 }, "117": { region: "USA", duration: 95 }, "118": { region: "Asia_Other", duration: 94 }, "119": { region: "Asia_Other", duration: 130 }, "120": { region: "Asia_Other", duration: 121 },
+            "121": { region: "USA", duration: 134 }, "122": { region: "USA", duration: 105 }, "123": { region: "USA", duration: 178 }, "124": { region: "Europe", duration: 123 }, "125": { region: "USA", duration: 149 }, "126": { region: "Asia_Other", duration: 141 }, "127": { region: "USA", duration: 98 }, "128": { region: "HK_TW", duration: 98 }, "129": { region: "Europe", duration: 129 }, "130": { region: "HK_TW", duration: 98 },
+            "131": { region: "Asia_Other", duration: 134 }, "132": { region: "USA", duration: 138 }, "133": { region: "USA", duration: 103 }, "134": { region: "Europe", duration: 116 }, "135": { region: "Mainland", duration: 134 }, "136": { region: "HK_TW", duration: 158 }, "137": { region: "Asia_Other", duration: 111 }, "138": { region: "USA", duration: 92 }, "139": { region: "Europe", duration: 122 }, "140": { region: "USA", duration: 162 },
+            "141": { region: "Asia_Other", duration: 111 }, "142": { region: "Mainland", duration: 65 }, "143": { region: "HK_TW", duration: 106 }, "144": { region: "Europe", duration: 132 }, "145": { region: "USA", duration: 165 }, "146": { region: "USA", duration: 128 }, "147": { region: "Asia_Other", duration: 118 }, "148": { region: "USA", duration: 95 }, "149": { region: "Asia_Other", duration: 120 }, "150": { region: "HK_TW", duration: 106 },
+            "151": { region: "Asia_Other", duration: 45 }, "152": { region: "Asia_Other", duration: 106 }, "153": { region: "Other", duration: 92 }, "154": { region: "Asia_Other", duration: 207 }, "155": { region: "USA", duration: 140 }, "156": { region: "Europe", duration: 114 }, "157": { region: "USA", duration: 109 }, "158": { region: "USA", duration: 125 }, "159": { region: "HK_TW", duration: 113 }, "160": { region: "USA", duration: 100 },
+            "161": { region: "USA", duration: 139 }, "162": { region: "Asia_Other", duration: 106 }, "163": { region: "Mainland", duration: 142 }, "164": { region: "USA", duration: 132 }, "165": { region: "Asia_Other", duration: 124 }, "166": { region: "Europe", duration: 102 }, "167": { region: "Asia_Other", duration: 97 }, "168": { region: "USA", duration: 129 }, "169": { region: "USA", duration: 122 }, "170": { region: "USA", duration: 115 },
+            "171": { region: "USA", duration: 115 }, "172": { region: "USA", duration: 103 }, "173": { region: "USA", duration: 130 }, "174": { region: "Mainland", duration: 140 }, "175": { region: "HK_TW", duration: 119 }, "176": { region: "USA", duration: 117 }, "177": { region: "USA", duration: 98 }, "178": { region: "USA", duration: 189 }, "179": { region: "USA", duration: 109 }, "180": { region: "Mainland", duration: 106 },
+            "181": { region: "USA", duration: 103 }, "182": { region: "Europe", duration: 149 }, "183": { region: "Asia_Other", duration: 128 }, "184": { region: "Asia_Other", duration: 117 }, "185": { region: "Other", duration: 130 }, "186": { region: "Mainland", duration: 119 }, "187": { region: "HK_TW", duration: 95 }, "188": { region: "USA", duration: 113 }, "189": { region: "HK_TW", duration: 108 }, "190": { region: "USA", duration: 101 },
+            "191": { region: "Europe", duration: 121 }, "192": { region: "Asia_Other", duration: 121 }, "193": { region: "Asia_Other", duration: 92 }, "194": { region: "Europe", duration: 99 }, "195": { region: "HK_TW", duration: 237 }, "196": { region: "USA", duration: 81 }, "197": { region: "Asia_Other", duration: 103 }, "198": { region: "Mainland", duration: 164 }, "199": { region: "Asia_Other", duration: 107 }, "200": { region: "HK_TW", duration: 117 },
+            "201": { region: "Other", duration: 122 }, "202": { region: "USA", duration: 97 }, "203": { region: "HK_TW", duration: 102 }, "204": { region: "USA", duration: 93 }, "205": { region: "Asia_Other", duration: 124 }, "206": { region: "Other", duration: 120 }, "207": { region: "Asia_Other", duration: 90 }, "208": { region: "USA", duration: 114 }, "209": { region: "Europe", duration: 120 }, "210": { region: "Mainland", duration: 88 },
+            "211": { region: "USA", duration: 87 }, "212": { region: "Europe", duration: 134 }, "213": { region: "USA", duration: 107 }, "214": { region: "HK_TW", duration: 100 }, "215": { region: "USA", duration: 128 }, "216": { region: "HK_TW", duration: 99 }, "217": { region: "USA", duration: 146 }, "218": { region: "USA", duration: 153 }, "219": { region: "USA", duration: 137 }, "220": { region: "Mainland", duration: 125 },
+            "221": { region: "USA", duration: 108 }, "222": { region: "HK_TW", duration: 88 }, "223": { region: "Asia_Other", duration: 118 }, "224": { region: "USA", duration: 146 }, "225": { region: "USA", duration: 106 }, "226": { region: "Asia_Other", duration: 101 }, "227": { region: "USA", duration: 133 }, "228": { region: "Europe", duration: 132 }, "229": { region: "USA", duration: 138 }, "230": { region: "Asia_Other", duration: 88 },
+            "231": { region: "USA", duration: 89 }, "232": { region: "USA", duration: 137 }, "233": { region: "USA", duration: 123 }, "234": { region: "Europe", duration: 135 }, "235": { region: "USA", duration: 144 }, "236": { region: "USA", duration: 138 }, "237": { region: "Asia_Other", duration: 115 }, "238": { region: "USA", duration: 113 }, "239": { region: "Asia_Other", duration: 87 }, "240": { region: "USA", duration: 102 },
+            "241": { region: "USA", duration: 122 }, "242": { region: "USA", duration: 108 }, "243": { region: "USA", duration: 117 }, "244": { region: "Asia_Other", duration: 82 }, "245": { region: "USA", duration: 143 }, "246": { region: "USA", duration: 108 }, "247": { region: "USA", duration: 127 }, "248": { region: "Asia_Other", duration: 145 }, "249": { region: "Europe", duration: 118 }, "250": { region: "HK_TW", duration: 112 }
+        };
+
+        const moviesDB = rawData.map(line => {
+            const [rankStr, title, yearStr, score, weights, quote] = line.split('|');
+            const rank = parseInt(rankStr);
+            const year = parseInt(yearStr);
+            
+            // 获取增强数据
+            // 现在 metadata 包含了所有 ID，因此不再需要回退逻辑
+            const meta = metadata[rankStr] || { region: "Other", duration: 100 }; // Fallback仅为防止代码崩溃
+
+            const [mood, pace, complexity, reality, intensity, era] = weights.split(',').map(Number);
+            return { rank, title, year, score, mood, pace, complexity, reality, intensity, era, quote, ...meta };
+        });
+
+        // --- 问题数据 ---
+        const questions = [
+            {
+                id: 1,
+                text: "此时此刻，你最希望电影带给你什么样的体验？",
+                options: [
+                    { text: "我想大哭一场，释放出内心的压抑", weights: { mood: 1, intensity: 4 } },
+                    { text: "我想逃离现实，进入一个奇幻的梦境", weights: { reality: 10, mood: 7 } },
+                    { text: "我想被温暖治愈，重拾对生活的信心", weights: { mood: 10, intensity: 1 } },
+                    { text: "我想要挑战智力，体验烧脑解谜的快感", weights: { complexity: 10, pace: 8 } }
+                ]
+            },
+            {
+                id: 2,
+                text: "你现在有多少精力和耐心？",
+                options: [
+                    { text: "精力充沛，可以接受快节奏和复杂叙事", weights: { pace: 9, complexity: 8 } },
+                    { text: "有点累，想要节奏舒缓、慢慢流淌的故事", weights: { pace: 2, complexity: 3 } },
+                    { text: "一般，只要故事好看，节奏不重要", weights: { pace: 5, complexity: 5 } },
+                    { text: "非常亢奋，需要感官刺激和动作场面", weights: { pace: 10, intensity: 9 } }
+                ]
+            },
+            {
+                id: 3,
+                text: "对于结局，你的偏好是？",
+                options: [
+                    { text: "必须是Happy Ending，生活已经够苦了", weights: { mood: 8 } },
+                    { text: "可以接受悲剧，只要它深刻并且合乎逻辑", weights: { mood: 2, complexity: 6 } },
+                    { text: "喜欢开放式的结局，留有无尽的回味空间", weights: { complexity: 8, reality: 5 } },
+                    { text: "不在乎结局，过程中的精彩跌宕更为重要", weights: { mood: 6, reality: 4 } }
+                ]
+            },
+            {
+                id: 4,
+                text: "你更倾向于喜欢哪种视觉风格？",
+                options: [
+                    { text: "朴实无华的写实主义，贴近生活的原貌", weights: { reality: 1 } },
+                    { text: "华丽的视觉特效，宏大的科幻或奇幻场景", weights: { reality: 10 } },
+                    { text: "独特的导演美学，构图和色彩讲究", weights: { reality: 6, complexity: 6 } },
+                    { text: "黑白影像或胶片质感，带有复古的韵味", weights: { era: 1, reality: 2 } }
+                ]
+            },
+            {
+                id: 5,
+                text: "面对复杂的社会议题或人性的黑暗面，你的态度是？",
+                options: [
+                    { text: "我想深刻剖析，想直面人性的深渊", weights: { intensity: 8, mood: 2 } },
+                    { text: "点到为止即可，不要过于沉重", weights: { intensity: 5, mood: 5 } },
+                    { text: "我只想看纯粹的美好，拒绝沉重的话题", weights: { intensity: 1, mood: 9 } },
+                    { text: "我喜欢讽刺和荒诞的处理方式", weights: { complexity: 7, mood: 6 } }
+                ]
+            },
+            {
+                id: 6,
+                text: "你更偏爱哪种类型的叙事结构？",
+                options: [
+                    { text: "线性叙事，从头到尾清晰明了", weights: { complexity: 2, pace: 5 } },
+                    { text: "非线性叙事，需要观众主动拼凑", weights: { complexity: 10, pace: 7 } },
+                    { text: "多线并进，多条故事线交织", weights: { complexity: 7, pace: 6 } },
+                    { text: "无所谓，只要故事精彩", weights: { complexity: 5, pace: 5 } }
+                ]
+            },
+            {
+                id: 7,
+                text: "对于电影的“情感基调”，你更倾向于哪一种？",
+                options: [
+                    { text: "东方美学：克制隐忍，此处无声胜有声", weights: { mood: 4, complexity: 6 } },
+                    { text: "戏剧冲突：浓烈奔放，情感张力拉满", weights: { intensity: 9, mood: 5 } },
+                    { text: "小确幸：温馨治愈，如春风拂面", weights: { mood: 9, intensity: 2 } },
+                    { text: "纪录风格：真实残酷，冷峻直面现实", weights: { reality: 2, mood: 2 } }
+                ]
+            },
+            {
+                id: 8,
+                text: "你更倾向于选择哪个年代的电影？",
+                options: [
+                    { text: "经典老片，黑白或彩色时代", weights: { era: 1, complexity: 4 } },
+                    { text: "90年代，那是黄金时代", weights: { era: 4, complexity: 5 } },
+                    { text: "2000年后，现代技术成熟", weights: { era: 8, complexity: 6 } },
+                    { text: "最近几年，新锐导演作品", weights: { era: 10, complexity: 8 } }
+                ]
+            },
+            {
+                id: 9,
+                text: "关于电影中的“喜剧成分”，你的偏好是？",
+                options: [
+                    { text: "黑色幽默或讽刺，让人会心一笑", weights: { complexity: 8, mood: 4 } },
+                    { text: "轻松愉快，纯粹的开心果", weights: { mood: 10, intensity: 2 } },
+                    { text: "不要搞笑，就要严肃深沉", weights: { mood: 2, complexity: 7 } },
+                    { text: "无厘头或动作喜剧，热闹就好", weights: { pace: 9, mood: 8 } }
+                ]
+            },
+            {
+                id: 10,
+                text: "灵魂拷问：你认为一部好电影最重要的是什么？",
+                options: [
+                    { text: "智力激荡，通过逻辑思考获得满足", weights: { complexity: 10 } },
+                    { text: "情感共鸣，能让我看到自己的影子", weights: { mood: 6, intensity: 5 } },
+                    { text: "视听盛宴，极致的画面与音效享受", weights: { reality: 10, era: 9 } },
+                    { text: "心灵慰藉，给我面对生活的勇气", weights: { mood: 9, reality: 4 } }
+                ]
+            }
+        ];
+
+        // --- 应用逻辑 ---
+        const app = {
+            currentQuestionIndex: 0,
+            userProfile: { mood: 5, pace: 5, complexity: 5, reality: 5, intensity: 5, era: 5 },
+            activeMovies: [], // 经过筛选后的电影池
+            sortedMovies: [],
+            displayCount: 25, 
+
+            init: function() {
+                this.showScreen('welcome-screen');
+                this.activeMovies = [...moviesDB]; // 默认包含所有电影
+            },
+
+            showScreen: function(screenId) {
+                document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+                document.getElementById(screenId).classList.remove('hidden');
+                window.scrollTo(0, 0);
+            },
+
+            // 开始问卷 (带筛选逻辑)
+            startQuiz: function() {
+                // 1. 获取筛选值
+                const eraFilter = document.getElementById('filter-era').value;
+                const regionFilter = document.getElementById('filter-region').value;
+                const durationFilter = document.getElementById('filter-duration').value;
+
+                // 2. 过滤电影池
+                this.activeMovies = moviesDB.filter(movie => {
+                    // 年代筛选
+                    let eraMatch = true;
+                    if (eraFilter === 'old') eraMatch = movie.year < 1990;
+                    else if (eraFilter === '90s') eraMatch = movie.year >= 1990 && movie.year < 2000;
+                    else if (eraFilter === '00s') eraMatch = movie.year >= 2000 && movie.year < 2010;
+                    else if (eraFilter === 'new') eraMatch = movie.year >= 2010;
+
+                    // 地区筛选
+                    let regionMatch = true;
+                    if (regionFilter !== 'all') {
+                        // 如果选了特定地区，Asia_Other 匹配 Asia_Other
+                        // Other 匹配 Other
+                        // 其余精准匹配
+                        regionMatch = movie.region === regionFilter;
+                    }
+
+                    // 时长筛选
+                    let durationMatch = true;
+                    if (durationFilter === 'short') durationMatch = movie.duration < 90;
+                    else if (durationFilter === 'medium') durationMatch = movie.duration >= 90 && movie.duration <= 120;
+                    else if (durationFilter === 'long') durationMatch = movie.duration > 120;
+
+                    return eraMatch && regionMatch && durationMatch;
+                });
+
+                if (this.activeMovies.length === 0) {
+                    alert("筛选条件太严格了，没有找到符合的电影！请尝试放宽条件。");
+                    this.activeMovies = [...moviesDB]; // 重置
+                    return; 
+                }
+
+                this.currentQuestionIndex = 0;
+                this.userProfile = { mood: 5, pace: 5, complexity: 5, reality: 5, intensity: 5, era: 5 };
+                this.showScreen('quiz-screen');
+                this.renderQuestion();
+            },
+
+            renderQuestion: function() {
+                const q = questions[this.currentQuestionIndex];
+                document.getElementById('q-text').innerText = q.text;
+                document.getElementById('q-current').innerText = this.currentQuestionIndex + 1;
+
+                const optionsGrid = document.getElementById('options-grid');
+                optionsGrid.innerHTML = '';
+                
+                q.options.forEach((opt, idx) => {
+                    const btn = document.createElement('div');
+                    btn.className = 'option-card border border-[rgba(241,237,230,0.2)] p-6 rounded-none cursor-pointer transition-all duration-300';
+                    btn.innerText = opt.text;
+                    btn.onclick = () => this.selectOption(opt.weights);
+                    optionsGrid.appendChild(btn);
+                });
+
+                const progress = ((this.currentQuestionIndex + 1) / questions.length) * 100;
+                document.getElementById('progress-bar').style.width = `${progress}%`;
+            },
+
+            selectOption: function(weights) {
+                Object.entries(weights).forEach(([key, value]) => {
+                    this.userProfile[key] = (this.userProfile[key] + value) / 2;
+                });
+
+                this.currentQuestionIndex++;
+                if (this.currentQuestionIndex < questions.length) {
+                    this.renderQuestion();
+                } else {
+                    this.showLoading();
+                }
+            },
+
+            showLoading: function() {
+                this.showScreen('loading-screen');
+                document.getElementById('filter-count-display').innerText = this.activeMovies.length;
+                
+                const analysisTexts = [
+                    '分析观影性格...',
+                    '匹配叙事节奏...',
+                    '计算视觉风格...',
+                    `正在排序 ${this.activeMovies.length} 部候选电影...`,
+                    '生成推荐片单...'
+                ];
+                let index = 0;
+                const interval = setInterval(() => {
+                    document.getElementById('analysis-text').innerText = analysisTexts[index];
+                    index++;
+                    if (index >= analysisTexts.length) {
+                        clearInterval(interval);
+                        this.calculateMatch();
+                    }
+                }, 600);
+            },
+
+            calculateMatch: function() {
+                // 注意：这里使用的是 this.activeMovies (筛选后的列表)
+                this.sortedMovies = this.activeMovies.map(movie => {
+                    const weights = { mood: 1.5, complexity: 1.2, pace: 1.0, reality: 1.0, intensity: 1.0, era: 0.8 };
+                    
+                    const moodDiff = Math.pow(movie.mood - this.userProfile.mood, 2) * weights.mood;
+                    const paceDiff = Math.pow(movie.pace - this.userProfile.pace, 2) * weights.pace;
+                    const complexityDiff = Math.pow(movie.complexity - this.userProfile.complexity, 2) * weights.complexity;
+                    const realityDiff = Math.pow(movie.reality - this.userProfile.reality, 2) * weights.reality;
+                    const intensityDiff = Math.pow(movie.intensity - this.userProfile.intensity, 2) * weights.intensity;
+                    const eraDiff = Math.pow(movie.era - this.userProfile.era, 2) * weights.era;
+                    
+                    const totalDistance = Math.sqrt(moodDiff + paceDiff + complexityDiff + realityDiff + intensityDiff + eraDiff);
+                    
+                    let matchScore = 100 - (totalDistance * 4); 
+                    if (matchScore < 0) matchScore = 0;
+                    
+                    return { ...movie, matchScore: matchScore.toFixed(1) };
+                }).sort((a, b) => {
+                    const scoreDiff = b.matchScore - a.matchScore;
+                    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+                    return a.rank - b.rank;
+                });
+                
+                this.showResult();
+            },
+
+            showResult: function() {
+                this.showScreen('result-screen');
+                this.renderAnalysis();
+                this.displayCount = 25;
+                this.renderTable();
+                document.getElementById('total-filtered-count').innerText = this.activeMovies.length;
+            },
+
+            renderAnalysis: function() {
+                const p = this.userProfile;
+                const tags = [];
+                
+                if (p.mood >= 7) tags.push('感性驱动');
+                else if (p.mood <= 4) tags.push('理性克制');
+                
+                if (p.complexity >= 7) tags.push('烧脑达人');
+                else if (p.complexity <= 4) tags.push('简单直接');
+                
+                if (p.reality >= 7) tags.push('幻想家');
+                else if (p.reality <= 4) tags.push('现实主义');
+                
+                if (p.era <= 3) tags.push('怀旧经典迷');
+                
+                const tagsContainer = document.getElementById('analysis-tags');
+                tagsContainer.innerHTML = tags.map(tag => 
+                    `<span class="px-3 py-1 bg-[rgba(165,184,208,0.2)] text-[#A5B8D0] text-sm rounded-none border border-[rgba(165,184,208,0.3)]">${tag}</span>`
+                ).join('');
+                
+                // 获取当前筛选条件文案
+                const eraText = document.getElementById('filter-era').options[document.getElementById('filter-era').selectedIndex].text;
+                const regionText = document.getElementById('filter-region').options[document.getElementById('filter-region').selectedIndex].text;
+                const durationText = document.getElementById('filter-duration').options[document.getElementById('filter-duration').selectedIndex].text;
+                
+                const content = `在“${eraText} / ${regionText} / ${durationText}”的范围内，基于你的回答，我为你重新排序了这 ${this.activeMovies.length} 部电影。`;
+                document.getElementById('analysis-content').innerText = content;
+            },
+
+            loadMore: function() {
+                this.displayCount += 25;
+                if (this.displayCount > this.activeMovies.length) this.displayCount = this.activeMovies.length;
+                this.renderTable();
+            },
+
+            renderTable: function() {
+                const tbody = document.getElementById('movie-table-body');
+                tbody.innerHTML = '';
+                
+                const currentData = this.sortedMovies.slice(0, this.displayCount);
+                
+                currentData.forEach((movie, index) => {
+                    // 简单的地区翻译映射
+                    const regionMap = { 
+                        'USA': '美国', 'Mainland': '中国大陆', 'HK_TW': '中国港台', 
+                        'Europe': '欧洲', 'Asia_Other': '其它', 'Other': '其他' 
+                    };
+                    const regionStr = regionMap[movie.region] || '其他';
+
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-[rgba(148,163,184,0.1)] hover:bg-[rgba(0,70,128,0.1)] transition-colors';
+                    row.innerHTML = `
+                        <td class="text-center font-mono text-slate-500">${index + 1}</td>
+                        <td class="text-center">
+                            <span class="font-bold text-[#F1EDE6]">${movie.matchScore}%</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="px-2 py-0.5 bg-[rgba(255,255,255,0.05)] text-slate-400 text-xs rounded-none">#${movie.rank}</span>
+                        </td>
+                        <td class="font-medium text-[#F1EDE6] text-base">
+                            ${movie.title} <span class="text-slate-500 text-xs ml-1 font-normal">${movie.year}</span>
+                        </td>
+                        <td class="text-center text-slate-500 text-xs hidden md:table-cell">
+                             ${regionStr}<br>${movie.duration}分钟
+                        </td>
+                        <td class="hidden lg:table-cell text-slate-400 text-xs italic opacity-80">"${movie.quote}"</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // 修正：显示当前实际渲染的数量，而不是默认的 displayCount
+                document.getElementById('display-count').innerText = currentData.length;
+                
+                const loadBtn = document.getElementById('load-more-btn');
+                if (this.displayCount >= this.activeMovies.length) {
+                    loadBtn.style.display = 'none';
+                } else {
+                    loadBtn.style.display = 'inline-block';
+                }
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
