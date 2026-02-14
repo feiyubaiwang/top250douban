@@ -138,14 +138,20 @@
                         <i class="fas fa-filter mr-2"></i> 选择范围
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- 年代筛选 -->
+                        <!-- 类型筛选 (替换了原有的年代筛选) -->
                         <div class="relative">
-                            <select id="filter-era" class="custom-select w-full bg-[rgba(241,237,230,0.05)] border border-[rgba(241,237,230,0.2)] text-[#F1EDE6] text-sm py-3 px-4 rounded-none focus:outline-none focus:border-[#F1EDE6] transition-colors cursor-pointer">
-                                <option value="all">所有年代</option>
-                                <option value="old">经典老片 (1990前)</option>
-                                <option value="90s">黄金90年代 (1990-1999)</option>
-                                <option value="00s">千禧一代 (2000-2009)</option>
-                                <option value="new">新锐佳作 (2010后)</option>
+                            <select id="filter-genre" class="custom-select w-full bg-[rgba(241,237,230,0.05)] border border-[rgba(241,237,230,0.2)] text-[#F1EDE6] text-sm py-3 px-4 rounded-none focus:outline-none focus:border-[#F1EDE6] transition-colors cursor-pointer">
+                                <option value="all">所有类型</option>
+                                <option value="剧情">剧情</option>
+                                <option value="喜剧">喜剧</option>
+                                <option value="动作">动作</option>
+                                <option value="爱情">爱情</option>
+                                <option value="科幻">科幻</option>
+                                <option value="动画">动画</option>
+                                <option value="悬疑">悬疑</option>
+                                <option value="犯罪">犯罪</option>
+                                <option value="惊悚">惊悚</option>
+                                <option value="奇幻">奇幻</option>
                             </select>
                         </div>
                         
@@ -239,7 +245,7 @@
                                 <th class="w-20 text-center">契合度</th>
                                 <th class="w-20 text-center">Top250</th>
                                 <th class="w-64">电影名称</th>
-                                <th class="w-32 text-center hidden md:table-cell">地区/时长</th>
+                                <th class="w-40 text-center hidden md:table-cell">信息</th>
                                 <th class="hidden lg:table-cell">核心短评</th>
                             </tr>
                         </thead>
@@ -519,33 +525,259 @@
         ];
 
         // --- 数据解析与增强 ---
-        // 完整的 250 部电影元数据 (Region & Duration)
+        // 完整的 250 部电影元数据 (Region & Duration & Genre)
+        // Genre 数据基于豆瓣/IMDb Top 250 
         const metadata = {
-            "1": { region: "USA", duration: 142 }, "2": { region: "Mainland", duration: 171 }, "3": { region: "USA", duration: 194 }, "4": { region: "USA", duration: 142 }, "5": { region: "Asia_Other", duration: 125 }, "6": { region: "Europe", duration: 116 }, "7": { region: "USA", duration: 169 }, "8": { region: "Europe", duration: 110 }, "9": { region: "USA", duration: 148 }, "10": { region: "USA", duration: 103 },
-            "11": { region: "USA", duration: 195 }, "12": { region: "USA", duration: 93 }, "13": { region: "Europe", duration: 165 }, "14": { region: "USA", duration: 108 }, "15": { region: "Asia_Other", duration: 170 }, "16": { region: "USA", duration: 98 }, "17": { region: "Europe", duration: 97 }, "18": { region: "HK_TW", duration: 101 }, "19": { region: "USA", duration: 116 }, "20": { region: "HK_TW", duration: 95 },
-            "21": { region: "USA", duration: 105 }, "22": { region: "Asia_Other", duration: 125 }, "23": { region: "Europe", duration: 112 }, "24": { region: "USA", duration: 175 }, "25": { region: "Europe", duration: 163 }, "26": { region: "USA", duration: 117 }, "27": { region: "USA", duration: 152 }, "28": { region: "Asia_Other", duration: 86 }, "29": { region: "Mainland", duration: 132 }, "30": { region: "USA", duration: 90 },
-            "31": { region: "USA", duration: 152 }, "32": { region: "USA", duration: 201 }, "33": { region: "Mainland", duration: 117 }, "34": { region: "USA", duration: 238 }, "35": { region: "Mainland", duration: 132 }, "36": { region: "USA", duration: 96 }, "37": { region: "Asia_Other", duration: 119 }, "38": { region: "USA", duration: 96 }, "39": { region: "Europe", duration: 111 }, "40": { region: "Asia_Other", duration: 122 },
-            "41": { region: "USA", duration: 141 }, "42": { region: "Asia_Other", duration: 124 }, "43": { region: "Mainland", duration: 139 }, "44": { region: "Asia_Other", duration: 161 }, "45": { region: "USA", duration: 127 }, "46": { region: "Europe", duration: 150 }, "47": { region: "USA", duration: 179 }, "48": { region: "USA", duration: 128 }, "49": { region: "HK_TW", duration: 87 }, "50": { region: "Asia_Other", duration: 126 },
-            "51": { region: "USA", duration: 130 }, "52": { region: "USA", duration: 156 }, "53": { region: "Mainland", duration: 114 }, "54": { region: "USA", duration: 136 }, "55": { region: "USA", duration: 178 }, "56": { region: "USA", duration: 118 }, "57": { region: "USA", duration: 202 }, "58": { region: "USA", duration: 88 }, "59": { region: "Europe", duration: 155 }, "60": { region: "HK_TW", duration: 124 },
-            "61": { region: "Asia_Other", duration: 127 }, "62": { region: "USA", duration: 166 }, "63": { region: "USA", duration: 139 }, "64": { region: "USA", duration: 135 }, "65": { region: "Europe", duration: 94 }, "66": { region: "Asia_Other", duration: 117 }, "67": { region: "USA", duration: 130 }, "68": { region: "Europe", duration: 107 }, "69": { region: "Europe", duration: 137 }, "70": { region: "USA", duration: 172 },
-            "71": { region: "HK_TW", duration: 99 }, "72": { region: "USA", duration: 142 }, "73": { region: "Europe", duration: 109 }, "74": { region: "USA", duration: 162 }, "75": { region: "Europe", duration: 106 }, "76": { region: "USA", duration: 169 }, "77": { region: "USA", duration: 118 }, "78": { region: "Asia_Other", duration: 89 }, "79": { region: "USA", duration: 99 }, "80": { region: "USA", duration: 113 },
-            "81": { region: "USA", duration: 133 }, "82": { region: "USA", duration: 138 }, "83": { region: "Europe", duration: 118 }, "84": { region: "USA", duration: 126 }, "85": { region: "USA", duration: 130 }, "86": { region: "USA", duration: 154 }, "87": { region: "USA", duration: 98 }, "88": { region: "USA", duration: 161 }, "89": { region: "HK_TW", duration: 173 }, "90": { region: "HK_TW", duration: 85 },
-            "91": { region: "USA", duration: 87 }, "92": { region: "Asia_Other", duration: 131 }, "93": { region: "USA", duration: 90 }, "94": { region: "HK_TW", duration: 96 }, "95": { region: "USA", duration: 143 }, "96": { region: "USA", duration: 92 }, "97": { region: "USA", duration: 229 }, "98": { region: "Asia_Other", duration: 90 }, "99": { region: "USA", duration: 127 }, "100": { region: "HK_TW", duration: 102 },
-            "101": { region: "Europe", duration: 115 }, "102": { region: "Asia_Other", duration: 134 }, "103": { region: "HK_TW", duration: 118 }, "104": { region: "Asia_Other", duration: 132 }, "105": { region: "USA", duration: 164 }, "106": { region: "Mainland", duration: 89 }, "107": { region: "Asia_Other", duration: 127 }, "108": { region: "USA", duration: 102 }, "109": { region: "USA", duration: 107 }, "110": { region: "USA", duration: 101 },
-            "111": { region: "Mainland", duration: 118 }, "112": { region: "USA", duration: 80 }, "113": { region: "Asia_Other", duration: 130 }, "114": { region: "USA", duration: 157 }, "115": { region: "HK_TW", duration: 102 }, "116": { region: "Asia_Other", duration: 81 }, "117": { region: "USA", duration: 95 }, "118": { region: "Asia_Other", duration: 94 }, "119": { region: "Asia_Other", duration: 130 }, "120": { region: "Asia_Other", duration: 121 },
-            "121": { region: "USA", duration: 134 }, "122": { region: "USA", duration: 105 }, "123": { region: "USA", duration: 178 }, "124": { region: "Europe", duration: 123 }, "125": { region: "USA", duration: 149 }, "126": { region: "Asia_Other", duration: 141 }, "127": { region: "USA", duration: 98 }, "128": { region: "HK_TW", duration: 98 }, "129": { region: "Europe", duration: 129 }, "130": { region: "HK_TW", duration: 98 },
-            "131": { region: "Asia_Other", duration: 134 }, "132": { region: "USA", duration: 138 }, "133": { region: "USA", duration: 103 }, "134": { region: "Europe", duration: 116 }, "135": { region: "Mainland", duration: 134 }, "136": { region: "HK_TW", duration: 158 }, "137": { region: "Asia_Other", duration: 111 }, "138": { region: "USA", duration: 92 }, "139": { region: "Europe", duration: 122 }, "140": { region: "USA", duration: 162 },
-            "141": { region: "Asia_Other", duration: 111 }, "142": { region: "Mainland", duration: 65 }, "143": { region: "HK_TW", duration: 106 }, "144": { region: "Europe", duration: 132 }, "145": { region: "USA", duration: 165 }, "146": { region: "USA", duration: 128 }, "147": { region: "Asia_Other", duration: 118 }, "148": { region: "USA", duration: 95 }, "149": { region: "Asia_Other", duration: 120 }, "150": { region: "HK_TW", duration: 106 },
-            "151": { region: "Asia_Other", duration: 45 }, "152": { region: "Asia_Other", duration: 106 }, "153": { region: "Other", duration: 92 }, "154": { region: "Asia_Other", duration: 207 }, "155": { region: "USA", duration: 140 }, "156": { region: "Europe", duration: 114 }, "157": { region: "USA", duration: 109 }, "158": { region: "USA", duration: 125 }, "159": { region: "HK_TW", duration: 113 }, "160": { region: "USA", duration: 100 },
-            "161": { region: "USA", duration: 139 }, "162": { region: "Asia_Other", duration: 106 }, "163": { region: "Mainland", duration: 142 }, "164": { region: "USA", duration: 132 }, "165": { region: "Asia_Other", duration: 124 }, "166": { region: "Europe", duration: 102 }, "167": { region: "Asia_Other", duration: 97 }, "168": { region: "USA", duration: 129 }, "169": { region: "USA", duration: 122 }, "170": { region: "USA", duration: 115 },
-            "171": { region: "USA", duration: 115 }, "172": { region: "USA", duration: 103 }, "173": { region: "USA", duration: 130 }, "174": { region: "Mainland", duration: 140 }, "175": { region: "HK_TW", duration: 119 }, "176": { region: "USA", duration: 117 }, "177": { region: "USA", duration: 98 }, "178": { region: "USA", duration: 189 }, "179": { region: "USA", duration: 109 }, "180": { region: "Mainland", duration: 106 },
-            "181": { region: "USA", duration: 103 }, "182": { region: "Europe", duration: 149 }, "183": { region: "Asia_Other", duration: 128 }, "184": { region: "Asia_Other", duration: 117 }, "185": { region: "Other", duration: 130 }, "186": { region: "Mainland", duration: 119 }, "187": { region: "HK_TW", duration: 95 }, "188": { region: "USA", duration: 113 }, "189": { region: "HK_TW", duration: 108 }, "190": { region: "USA", duration: 101 },
-            "191": { region: "Europe", duration: 121 }, "192": { region: "Asia_Other", duration: 121 }, "193": { region: "Asia_Other", duration: 92 }, "194": { region: "Europe", duration: 99 }, "195": { region: "HK_TW", duration: 237 }, "196": { region: "USA", duration: 81 }, "197": { region: "Asia_Other", duration: 103 }, "198": { region: "Mainland", duration: 164 }, "199": { region: "Asia_Other", duration: 107 }, "200": { region: "HK_TW", duration: 117 },
-            "201": { region: "Other", duration: 122 }, "202": { region: "USA", duration: 97 }, "203": { region: "HK_TW", duration: 102 }, "204": { region: "USA", duration: 93 }, "205": { region: "Asia_Other", duration: 124 }, "206": { region: "Other", duration: 120 }, "207": { region: "Asia_Other", duration: 90 }, "208": { region: "USA", duration: 114 }, "209": { region: "Europe", duration: 120 }, "210": { region: "Mainland", duration: 88 },
-            "211": { region: "USA", duration: 87 }, "212": { region: "Europe", duration: 134 }, "213": { region: "USA", duration: 107 }, "214": { region: "HK_TW", duration: 100 }, "215": { region: "USA", duration: 128 }, "216": { region: "HK_TW", duration: 99 }, "217": { region: "USA", duration: 146 }, "218": { region: "USA", duration: 153 }, "219": { region: "USA", duration: 137 }, "220": { region: "Mainland", duration: 125 },
-            "221": { region: "USA", duration: 108 }, "222": { region: "HK_TW", duration: 88 }, "223": { region: "Asia_Other", duration: 118 }, "224": { region: "USA", duration: 146 }, "225": { region: "USA", duration: 106 }, "226": { region: "Asia_Other", duration: 101 }, "227": { region: "USA", duration: 133 }, "228": { region: "Europe", duration: 132 }, "229": { region: "USA", duration: 138 }, "230": { region: "Asia_Other", duration: 88 },
-            "231": { region: "USA", duration: 89 }, "232": { region: "USA", duration: 137 }, "233": { region: "USA", duration: 123 }, "234": { region: "Europe", duration: 135 }, "235": { region: "USA", duration: 144 }, "236": { region: "USA", duration: 138 }, "237": { region: "Asia_Other", duration: 115 }, "238": { region: "USA", duration: 113 }, "239": { region: "Asia_Other", duration: 87 }, "240": { region: "USA", duration: 102 },
-            "241": { region: "USA", duration: 122 }, "242": { region: "USA", duration: 108 }, "243": { region: "USA", duration: 117 }, "244": { region: "Asia_Other", duration: 82 }, "245": { region: "USA", duration: 143 }, "246": { region: "USA", duration: 108 }, "247": { region: "USA", duration: 127 }, "248": { region: "Asia_Other", duration: 145 }, "249": { region: "Europe", duration: 118 }, "250": { region: "HK_TW", duration: 112 }
+            "1": { region: "USA", duration: 142, genre: "剧情 犯罪" },
+            "2": { region: "Mainland", duration: 171, genre: "剧情 爱情 同性" },
+            "3": { region: "USA", duration: 194, genre: "剧情 爱情 灾难" },
+            "4": { region: "USA", duration: 142, genre: "剧情 爱情" },
+            "5": { region: "Asia_Other", duration: 125, genre: "剧情 动画 奇幻" },
+            "6": { region: "Europe", duration: 116, genre: "剧情 喜剧 爱情" },
+            "7": { region: "USA", duration: 169, genre: "剧情 科幻 冒险" },
+            "8": { region: "Europe", duration: 110, genre: "剧情 动作 犯罪" },
+            "9": { region: "USA", duration: 148, genre: "剧情 科幻 悬疑" },
+            "10": { region: "USA", duration: 103, genre: "剧情 科幻" },
+            "11": { region: "USA", duration: 195, genre: "剧情 历史 战争" },
+            "12": { region: "USA", duration: 93, genre: "剧情" },
+            "13": { region: "Europe", duration: 165, genre: "剧情 音乐" },
+            "14": { region: "USA", duration: 108, genre: "喜剧 动画 冒险" },
+            "15": { region: "Asia_Other", duration: 170, genre: "剧情 喜剧 爱情" },
+            "16": { region: "USA", duration: 98, genre: "科幻 动画 冒险" },
+            "17": { region: "Europe", duration: 97, genre: "剧情 音乐" },
+            "18": { region: "HK_TW", duration: 101, genre: "剧情 悬疑 犯罪" },
+            "19": { region: "USA", duration: 116, genre: "剧情 悬疑 犯罪" },
+            "20": { region: "HK_TW", duration: 95, genre: "喜剧 动作 爱情" },
+            "21": { region: "USA", duration: 105, genre: "喜剧 动画 奇幻" },
+            "22": { region: "Asia_Other", duration: 125, genre: "剧情" },
+            "23": { region: "Europe", duration: 112, genre: "剧情 喜剧" },
+            "24": { region: "USA", duration: 175, genre: "剧情 犯罪" },
+            "25": { region: "Europe", duration: 163, genre: "剧情 传记 历史" },
+            "26": { region: "USA", duration: 117, genre: "剧情 传记" },
+            "27": { region: "USA", duration: 152, genre: "奇幻 冒险" },
+            "28": { region: "Asia_Other", duration: 86, genre: "动画 奇幻" },
+            "29": { region: "Mainland", duration: 132, genre: "剧情 历史" },
+            "30": { region: "USA", duration: 90, genre: "剧情 喜剧 爱情" },
+            "31": { region: "USA", duration: 152, genre: "剧情 动作 科幻" },
+            "32": { region: "USA", duration: 201, genre: "剧情 动作 奇幻" },
+            "33": { region: "Mainland", duration: 117, genre: "剧情 喜剧" },
+            "34": { region: "USA", duration: 238, genre: "剧情 爱情 战争" },
+            "35": { region: "Mainland", duration: 132, genre: "剧情 喜剧 动作" },
+            "36": { region: "USA", duration: 96, genre: "剧情 喜剧 动画" },
+            "37": { region: "Asia_Other", duration: 119, genre: "爱情 动画 奇幻" },
+            "38": { region: "USA", duration: 96, genre: "剧情" },
+            "39": { region: "Europe", duration: 111, genre: "剧情 冒险" },
+            "40": { region: "Asia_Other", duration: 122, genre: "剧情" },
+            "41": { region: "USA", duration: 141, genre: "剧情 传记 犯罪" },
+            "42": { region: "Asia_Other", duration: 124, genre: "动画 奇幻 冒险" },
+            "43": { region: "Mainland", duration: 139, genre: "剧情 战争" },
+            "44": { region: "Asia_Other", duration: 161, genre: "剧情 喜剧 运动" },
+            "45": { region: "USA", duration: 127, genre: "剧情 奇幻 冒险" },
+            "46": { region: "Europe", duration: 150, genre: "剧情 传记 战争" },
+            "47": { region: "USA", duration: 179, genre: "剧情 动作 奇幻" },
+            "48": { region: "USA", duration: 128, genre: "剧情" },
+            "49": { region: "HK_TW", duration: 87, genre: "喜剧 动作 爱情" },
+            "50": { region: "Asia_Other", duration: 126, genre: "剧情" },
+            "51": { region: "USA", duration: 130, genre: "剧情 喜剧 传记" },
+            "52": { region: "USA", duration: 156, genre: "剧情" },
+            "53": { region: "Mainland", duration: 114, genre: "剧情 动画 奇幻" },
+            "54": { region: "USA", duration: 136, genre: "动作 科幻" },
+            "55": { region: "USA", duration: 178, genre: "剧情 动作 奇幻" },
+            "56": { region: "USA", duration: 118, genre: "剧情 喜剧 爱情" },
+            "57": { region: "USA", duration: 202, genre: "剧情 犯罪" },
+            "58": { region: "USA", duration: 88, genre: "剧情 动画 冒险" },
+            "59": { region: "Europe", duration: 155, genre: "剧情 爱情" },
+            "60": { region: "HK_TW", duration: 124, genre: "剧情 家庭" },
+            "61": { region: "Asia_Other", duration: 127, genre: "剧情" },
+            "62": { region: "USA", duration: 166, genre: "剧情 爱情 奇幻" },
+            "63": { region: "USA", duration: 139, genre: "剧情 悬疑 惊悚" },
+            "64": { region: "USA", duration: 135, genre: "剧情 传记" },
+            "65": { region: "Europe", duration: 94, genre: "剧情 战争" },
+            "66": { region: "Asia_Other", duration: 117, genre: "剧情 爱情" },
+            "67": { region: "USA", duration: 130, genre: "奇幻 冒险" },
+            "68": { region: "Europe", duration: 107, genre: "剧情 喜剧 犯罪" },
+            "69": { region: "Europe", duration: 137, genre: "剧情 悬疑" },
+            "70": { region: "USA", duration: 172, genre: "剧情 爱情 歌舞" },
+            "71": { region: "HK_TW", duration: 99, genre: "喜剧 动作 犯罪" },
+            "72": { region: "USA", duration: 142, genre: "奇幻 冒险" },
+            "73": { region: "Europe", duration: 109, genre: "剧情 战争" },
+            "74": { region: "USA", duration: 162, genre: "动作 科幻 冒险" },
+            "75": { region: "Europe", duration: 106, genre: "剧情 悬疑 惊悚" },
+            "76": { region: "USA", duration: 169, genre: "剧情 历史 战争" },
+            "77": { region: "USA", duration: 118, genre: "剧情 犯罪 惊悚" },
+            "78": { region: "Asia_Other", duration: 89, genre: "剧情 家庭" },
+            "79": { region: "USA", duration: 99, genre: "剧情 喜剧 冒险" },
+            "80": { region: "USA", duration: 113, genre: "剧情 科幻 悬疑" },
+            "81": { region: "USA", duration: 133, genre: "剧情" },
+            "82": { region: "USA", duration: 138, genre: "剧情 悬疑 惊悚" },
+            "83": { region: "Europe", duration: 118, genre: "剧情 喜剧" },
+            "84": { region: "USA", duration: 126, genre: "剧情" },
+            "85": { region: "USA", duration: 130, genre: "剧情 悬疑 惊悚" },
+            "86": { region: "USA", duration: 154, genre: "剧情 喜剧 犯罪" },
+            "87": { region: "USA", duration: 98, genre: "剧情" },
+            "88": { region: "USA", duration: 161, genre: "奇幻 冒险" },
+            "89": { region: "HK_TW", duration: 173, genre: "剧情 爱情 家庭" },
+            "90": { region: "HK_TW", duration: 85, genre: "剧情 喜剧 爱情" },
+            "91": { region: "USA", duration: 87, genre: "剧情 喜剧 爱情" },
+            "92": { region: "Asia_Other", duration: 131, genre: "剧情 悬疑 犯罪" },
+            "93": { region: "USA", duration: 90, genre: "剧情 悬疑 惊悚" },
+            "94": { region: "HK_TW", duration: 96, genre: "剧情 爱情 同性" },
+            "95": { region: "USA", duration: 143, genre: "动作 奇幻 冒险" },
+            "96": { region: "USA", duration: 92, genre: "纪录片" },
+            "97": { region: "USA", duration: 229, genre: "剧情 犯罪" },
+            "98": { region: "Asia_Other", duration: 90, genre: "科幻 动画 悬疑" },
+            "99": { region: "USA", duration: 127, genre: "剧情 悬疑 惊悚" },
+            "100": { region: "HK_TW", duration: 102, genre: "喜剧 爱情 古装" },
+            "101": { region: "Europe", duration: 115, genre: "剧情" },
+            "102": { region: "Asia_Other", duration: 134, genre: "动画 奇幻 冒险" },
+            "103": { region: "HK_TW", duration: 118, genre: "剧情 爱情" },
+            "104": { region: "Asia_Other", duration: 132, genre: "剧情 喜剧" },
+            "105": { region: "USA", duration: 164, genre: "剧情 动作 科幻" },
+            "106": { region: "Mainland", duration: 89, genre: "动画 奇幻" },
+            "107": { region: "Asia_Other", duration: 127, genre: "剧情 喜剧 家庭" },
+            "108": { region: "USA", duration: 102, genre: "喜剧 动作 科幻" },
+            "109": { region: "USA", duration: 107, genre: "剧情 悬疑 惊悚" },
+            "110": { region: "USA", duration: 101, genre: "剧情 爱情" },
+            "111": { region: "Mainland", duration: 118, genre: "剧情 历史" },
+            "112": { region: "USA", duration: 80, genre: "剧情 爱情" },
+            "113": { region: "Asia_Other", duration: 130, genre: "剧情 歌舞" },
+            "114": { region: "USA", duration: 157, genre: "奇幻 冒险" },
+            "115": { region: "HK_TW", duration: 102, genre: "剧情 爱情" },
+            "116": { region: "Asia_Other", duration: 81, genre: "动画 悬疑 惊悚" },
+            "117": { region: "USA", duration: 95, genre: "喜剧 动画 冒险" },
+            "118": { region: "Asia_Other", duration: 94, genre: "动画 奇幻 冒险" },
+            "119": { region: "Asia_Other", duration: 130, genre: "剧情" },
+            "120": { region: "Asia_Other", duration: 121, genre: "剧情 喜剧" },
+            "121": { region: "USA", duration: 134, genre: "剧情 爱情 同性" },
+            "122": { region: "USA", duration: 105, genre: "剧情 爱情 奇幻" },
+            "123": { region: "USA", duration: 178, genre: "剧情 动作 传记" },
+            "124": { region: "Europe", duration: 123, genre: "剧情 爱情 奇幻" },
+            "125": { region: "USA", duration: 149, genre: "剧情 悬疑 惊悚" },
+            "126": { region: "Asia_Other", duration: 141, genre: "剧情" },
+            "127": { region: "USA", duration: 98, genre: "动画 奇幻 冒险" },
+            "128": { region: "HK_TW", duration: 98, genre: "剧情 爱情 古装" },
+            "129": { region: "Europe", duration: 129, genre: "剧情 爱情" },
+            "130": { region: "HK_TW", duration: 98, genre: "剧情 爱情" },
+            "131": { region: "Asia_Other", duration: 134, genre: "剧情 犯罪" },
+            "132": { region: "USA", duration: 138, genre: "剧情 犯罪" },
+            "133": { region: "USA", duration: 103, genre: "喜剧 动画 奇幻" },
+            "134": { region: "Europe", duration: 116, genre: "剧情 喜剧" },
+            "135": { region: "Mainland", duration: 134, genre: "剧情 爱情" },
+            "136": { region: "HK_TW", duration: 158, genre: "剧情 爱情 情色" },
+            "137": { region: "Asia_Other", duration: 111, genre: "剧情" },
+            "138": { region: "USA", duration: 92, genre: "喜剧 动画 奇幻" },
+            "139": { region: "Europe", duration: 122, genre: "剧情 喜剧 爱情" },
+            "140": { region: "USA", duration: 162, genre: "剧情 犯罪" },
+            "141": { region: "Asia_Other", duration: 111, genre: "剧情 爱情 动画" },
+            "142": { region: "Mainland", duration: 65, genre: "动画 奇幻 冒险" },
+            "143": { region: "HK_TW", duration: 106, genre: "剧情 喜剧 古装" },
+            "144": { region: "Europe", duration: 132, genre: "剧情 爱情 同性" },
+            "145": { region: "USA", duration: 165, genre: "剧情 动作 西部" },
+            "146": { region: "USA", duration: 128, genre: "剧情 喜剧 爱情" },
+            "147": { region: "Asia_Other", duration: 118, genre: "动作 惊悚 灾难" },
+            "148": { region: "USA", duration: 95, genre: "喜剧 动画 冒险" },
+            "149": { region: "Asia_Other", duration: 120, genre: "剧情" },
+            "150": { region: "HK_TW", duration: 106, genre: "剧情 喜剧 爱情" },
+            "151": { region: "Asia_Other", duration: 45, genre: "剧情 爱情 动画" },
+            "152": { region: "Asia_Other", duration: 106, genre: "剧情 悬疑 惊悚" },
+            "153": { region: "Other", duration: 92, genre: "剧情 喜剧 动画" },
+            "154": { region: "Asia_Other", duration: 207, genre: "剧情 动作 冒险" },
+            "155": { region: "USA", duration: 140, genre: "动作 科幻 冒险" },
+            "156": { region: "Europe", duration: 114, genre: "剧情 传记 战争" },
+            "157": { region: "USA", duration: 109, genre: "悬疑 恐怖" },
+            "158": { region: "USA", duration: 125, genre: "剧情 奇幻 冒险" },
+            "159": { region: "HK_TW", duration: 113, genre: "喜剧 古装" },
+            "160": { region: "USA", duration: 100, genre: "动画 音乐 奇幻" },
+            "161": { region: "USA", duration: 139, genre: "剧情 传记 历史" },
+            "162": { region: "Asia_Other", duration: 106, genre: "剧情 爱情 动画" },
+            "163": { region: "Mainland", duration: 142, genre: "剧情" },
+            "164": { region: "USA", duration: 132, genre: "剧情 家庭" },
+            "165": { region: "Asia_Other", duration: 124, genre: "剧情 喜剧" },
+            "166": { region: "Europe", duration: 102, genre: "剧情 动画 音乐" },
+            "167": { region: "Asia_Other", duration: 97, genre: "剧情 悬疑 犯罪" },
+            "168": { region: "USA", duration: 129, genre: "动作 科幻" },
+            "169": { region: "USA", duration: 122, genre: "剧情 惊悚 犯罪" },
+            "170": { region: "USA", duration: 115, genre: "剧情 犯罪" },
+            "171": { region: "USA", duration: 115, genre: "动作 悬疑 惊悚" },
+            "172": { region: "USA", duration: 103, genre: "悬疑 惊悚 恐怖" },
+            "173": { region: "USA", duration: 130, genre: "剧情 惊悚 犯罪" },
+            "174": { region: "Mainland", duration: 140, genre: "剧情 战争" },
+            "175": { region: "HK_TW", duration: 119, genre: "剧情 动作 犯罪" },
+            "176": { region: "USA", duration: 117, genre: "剧情 传记" },
+            "177": { region: "USA", duration: 98, genre: "喜剧 动画 冒险" },
+            "178": { region: "USA", duration: 189, genre: "剧情 悬疑 犯罪" },
+            "179": { region: "USA", duration: 109, genre: "剧情 爱情" },
+            "180": { region: "Mainland", duration: 106, genre: "喜剧 犯罪" },
+            "181": { region: "USA", duration: 103, genre: "喜剧 爱情 歌舞" },
+            "182": { region: "Europe", duration: 149, genre: "科幻 惊悚 冒险" },
+            "183": { region: "Asia_Other", duration: 128, genre: "剧情 家庭" },
+            "184": { region: "Asia_Other", duration: 117, genre: "科幻 动画 奇幻" },
+            "185": { region: "Other", duration: 130, genre: "剧情 犯罪" },
+            "186": { region: "Mainland", duration: 119, genre: "剧情 悬疑 犯罪" },
+            "187": { region: "HK_TW", duration: 95, genre: "剧情 动作 犯罪" },
+            "188": { region: "USA", duration: 113, genre: "剧情 悬疑 惊悚" },
+            "189": { region: "HK_TW", duration: 108, genre: "剧情 喜剧 动作" },
+            "190": { region: "USA", duration: 101, genre: "喜剧 动画 冒险" },
+            "191": { region: "Europe", duration: 121, genre: "剧情 历史 战争" },
+            "192": { region: "Asia_Other", duration: 121, genre: "剧情 犯罪 家庭" },
+            "193": { region: "Asia_Other", duration: 92, genre: "剧情 喜剧 动画" },
+            "194": { region: "Europe", duration: 99, genre: "剧情 悬疑 惊悚" },
+            "195": { region: "HK_TW", duration: 237, genre: "剧情 犯罪" },
+            "196": { region: "USA", duration: 81, genre: "喜剧 动画 冒险" },
+            "197": { region: "Asia_Other", duration: 103, genre: "动画 奇幻 冒险" },
+            "198": { region: "Mainland", duration: 164, genre: "剧情 爱情" },
+            "199": { region: "Asia_Other", duration: 107, genre: "剧情" },
+            "200": { region: "HK_TW", duration: 117, genre: "剧情 家庭" },
+            "201": { region: "Other", duration: 122, genre: "剧情 喜剧 惊悚" },
+            "202": { region: "USA", duration: 97, genre: "剧情 喜剧 冒险" },
+            "203": { region: "HK_TW", duration: 102, genre: "剧情 喜剧" },
+            "204": { region: "USA", duration: 93, genre: "剧情 科幻 悬疑" },
+            "205": { region: "Asia_Other", duration: 124, genre: "剧情 爱情" },
+            "206": { region: "Other", duration: 120, genre: "动作 科幻 冒险" },
+            "207": { region: "Asia_Other", duration: 90, genre: "剧情 动画 儿童" },
+            "208": { region: "USA", duration: 114, genre: "剧情 喜剧 冒险" },
+            "209": { region: "Europe", duration: 120, genre: "剧情 爱情" },
+            "210": { region: "Mainland", duration: 88, genre: "剧情 冒险" },
+            "211": { region: "USA", duration: 87, genre: "剧情 喜剧 爱情" },
+            "212": { region: "Europe", duration: 134, genre: "剧情 音乐 传记" },
+            "213": { region: "USA", duration: 107, genre: "剧情 音乐" },
+            "214": { region: "HK_TW", duration: 100, genre: "剧情 动作 爱情" },
+            "215": { region: "USA", duration: 128, genre: "剧情 爱情 歌舞" },
+            "216": { region: "HK_TW", duration: 99, genre: "剧情 奇幻 古装" },
+            "217": { region: "USA", duration: 146, genre: "奇幻 冒险" },
+            "218": { region: "USA", duration: 153, genre: "剧情 战争" },
+            "219": { region: "USA", duration: 137, genre: "动作 科幻" },
+            "220": { region: "Mainland", duration: 125, genre: "剧情 爱情 历史" },
+            "221": { region: "USA", duration: 108, genre: "剧情 惊悚" },
+            "222": { region: "HK_TW", duration: 88, genre: "剧情 动作 爱情" },
+            "223": { region: "Asia_Other", duration: 118, genre: "剧情 喜剧 爱情" },
+            "224": { region: "USA", duration: 146, genre: "剧情 科幻 冒险" },
+            "225": { region: "USA", duration: 106, genre: "剧情 科幻 惊悚" },
+            "226": { region: "Asia_Other", duration: 101, genre: "动画 奇幻 冒险" },
+            "227": { region: "USA", duration: 133, genre: "剧情" },
+            "228": { region: "Europe", duration: 132, genre: "喜剧 战争" },
+            "229": { region: "USA", duration: 138, genre: "奇幻 冒险" },
+            "230": { region: "Asia_Other", duration: 88, genre: "剧情 悬疑 犯罪" },
+            "231": { region: "USA", duration: 89, genre: "科幻 悬疑 惊悚" },
+            "232": { region: "USA", duration: 137, genre: "剧情 家庭" },
+            "233": { region: "USA", duration: 123, genre: "剧情 爱情" },
+            "234": { region: "Europe", duration: 135, genre: "剧情 喜剧 爱情" },
+            "235": { region: "USA", duration: 144, genre: "剧情 科幻 冒险" },
+            "236": { region: "USA", duration: 138, genre: "动作 科幻" },
+            "237": { region: "Asia_Other", duration: 115, genre: "剧情 家庭" },
+            "238": { region: "USA", duration: 113, genre: "剧情 家庭 儿童" },
+            "239": { region: "Asia_Other", duration: 87, genre: "剧情 爱情 动画" },
+            "240": { region: "USA", duration: 102, genre: "喜剧 动画 冒险" },
+            "241": { region: "USA", duration: 122, genre: "剧情 犯罪" },
+            "242": { region: "USA", duration: 108, genre: "动作 悬疑 惊悚" },
+            "243": { region: "USA", duration: 117, genre: "动作 科幻 动画" },
+            "244": { region: "Asia_Other", duration: 82, genre: "动作 科幻 动画" },
+            "245": { region: "USA", duration: 143, genre: "剧情 惊悚 冒险" },
+            "246": { region: "USA", duration: 108, genre: "剧情 爱情 战争" },
+            "247": { region: "USA", duration: 127, genre: "剧情 传记 历史" },
+            "248": { region: "Asia_Other", duration: 145, genre: "剧情 悬疑 同性" },
+            "249": { region: "Europe", duration: 118, genre: "剧情 家庭" },
+            "250": { region: "HK_TW", duration: 112, genre: "剧情 悬疑 犯罪" }
         };
 
         const moviesDB = rawData.map(line => {
@@ -554,8 +786,7 @@
             const year = parseInt(yearStr);
             
             // 获取增强数据
-            // 现在 metadata 包含了所有 ID，因此不再需要回退逻辑
-            const meta = metadata[rankStr] || { region: "Other", duration: 100 }; // Fallback仅为防止代码崩溃
+            const meta = metadata[rankStr] || { region: "Other", duration: 100, genre: "剧情" };
 
             const [mood, pace, complexity, reality, intensity, era] = weights.split(',').map(Number);
             return { rank, title, year, score, mood, pace, complexity, reality, intensity, era, quote, ...meta };
@@ -669,13 +900,13 @@
         const app = {
             currentQuestionIndex: 0,
             userProfile: { mood: 5, pace: 5, complexity: 5, reality: 5, intensity: 5, era: 5 },
-            activeMovies: [], // 经过筛选后的电影池
+            activeMovies: [], 
             sortedMovies: [],
             displayCount: 25, 
 
             init: function() {
                 this.showScreen('welcome-screen');
-                this.activeMovies = [...moviesDB]; // 默认包含所有电影
+                this.activeMovies = [...moviesDB]; 
             },
 
             showScreen: function(screenId) {
@@ -684,29 +915,26 @@
                 window.scrollTo(0, 0);
             },
 
-            // 开始问卷 (带筛选逻辑)
             startQuiz: function() {
                 // 1. 获取筛选值
-                const eraFilter = document.getElementById('filter-era').value;
+                const genreFilter = document.getElementById('filter-genre').value;
                 const regionFilter = document.getElementById('filter-region').value;
                 const durationFilter = document.getElementById('filter-duration').value;
 
                 // 2. 过滤电影池
                 this.activeMovies = moviesDB.filter(movie => {
-                    // 年代筛选
-                    let eraMatch = true;
-                    if (eraFilter === 'old') eraMatch = movie.year < 1990;
-                    else if (eraFilter === '90s') eraMatch = movie.year >= 1990 && movie.year < 2000;
-                    else if (eraFilter === '00s') eraMatch = movie.year >= 2000 && movie.year < 2010;
-                    else if (eraFilter === 'new') eraMatch = movie.year >= 2010;
+                    // 类型筛选 (检查电影类型字符串是否包含选中类型)
+                    let genreMatch = true;
+                    if (genreFilter !== 'all') {
+                        genreMatch = movie.genre.includes(genreFilter);
+                    }
 
                     // 地区筛选
                     let regionMatch = true;
                     if (regionFilter !== 'all') {
-                        // 如果选了特定地区，Asia_Other 匹配 Asia_Other
-                        // Other 匹配 Other
-                        // 其余精准匹配
-                        regionMatch = movie.region === regionFilter;
+                        if (regionFilter === 'Asia_Other') regionMatch = (movie.region === 'Asia_Other' || movie.region === 'Other'); 
+                        else if (regionFilter === 'Other') regionMatch = movie.region === 'Other'; // 兼容
+                        else regionMatch = movie.region === regionFilter;
                     }
 
                     // 时长筛选
@@ -715,12 +943,12 @@
                     else if (durationFilter === 'medium') durationMatch = movie.duration >= 90 && movie.duration <= 120;
                     else if (durationFilter === 'long') durationMatch = movie.duration > 120;
 
-                    return eraMatch && regionMatch && durationMatch;
+                    return genreMatch && regionMatch && durationMatch;
                 });
 
                 if (this.activeMovies.length === 0) {
                     alert("筛选条件太严格了，没有找到符合的电影！请尝试放宽条件。");
-                    this.activeMovies = [...moviesDB]; // 重置
+                    this.activeMovies = [...moviesDB]; 
                     return; 
                 }
 
@@ -786,7 +1014,6 @@
             },
 
             calculateMatch: function() {
-                // 注意：这里使用的是 this.activeMovies (筛选后的列表)
                 this.sortedMovies = this.activeMovies.map(movie => {
                     const weights = { mood: 1.5, complexity: 1.2, pace: 1.0, reality: 1.0, intensity: 1.0, era: 0.8 };
                     
@@ -840,12 +1067,11 @@
                     `<span class="px-3 py-1 bg-[rgba(165,184,208,0.2)] text-[#A5B8D0] text-sm rounded-none border border-[rgba(165,184,208,0.3)]">${tag}</span>`
                 ).join('');
                 
-                // 获取当前筛选条件文案
-                const eraText = document.getElementById('filter-era').options[document.getElementById('filter-era').selectedIndex].text;
+                const genreText = document.getElementById('filter-genre').options[document.getElementById('filter-genre').selectedIndex].text;
                 const regionText = document.getElementById('filter-region').options[document.getElementById('filter-region').selectedIndex].text;
                 const durationText = document.getElementById('filter-duration').options[document.getElementById('filter-duration').selectedIndex].text;
                 
-                const content = `在“${eraText} / ${regionText} / ${durationText}”的范围内，基于你的回答，我为你重新排序了这 ${this.activeMovies.length} 部电影。`;
+                const content = `在“${genreText} / ${regionText} / ${durationText}”的范围内，基于你的回答，我为你重新排序了这 ${this.activeMovies.length} 部电影。`;
                 document.getElementById('analysis-content').innerText = content;
             },
 
@@ -862,12 +1088,11 @@
                 const currentData = this.sortedMovies.slice(0, this.displayCount);
                 
                 currentData.forEach((movie, index) => {
-                    // 简单的地区翻译映射
                     const regionMap = { 
                         'USA': '美国', 'Mainland': '中国大陆', 'HK_TW': '中国港台', 
-                        'Europe': '欧洲', 'Asia_Other': '其它', 'Other': '其他' 
+                        'Europe': '欧洲', 'Asia_Other': '其它', 'Other': '其它' 
                     };
-                    const regionStr = regionMap[movie.region] || '其他';
+                    const regionStr = regionMap[movie.region] || '其它';
 
                     const row = document.createElement('tr');
                     row.className = 'border-b border-[rgba(148,163,184,0.1)] hover:bg-[rgba(0,70,128,0.1)] transition-colors';
@@ -883,14 +1108,14 @@
                             ${movie.title} <span class="text-slate-500 text-xs ml-1 font-normal">${movie.year}</span>
                         </td>
                         <td class="text-center text-slate-500 text-xs hidden md:table-cell">
-                             ${regionStr}<br>${movie.duration}分钟
+                             <div class="mb-1 text-[#A5B8D0]">${movie.genre}</div>
+                             <div class="opacity-60">${regionStr} · ${movie.duration}分</div>
                         </td>
                         <td class="hidden lg:table-cell text-slate-400 text-xs italic opacity-80">"${movie.quote}"</td>
                     `;
                     tbody.appendChild(row);
                 });
                 
-                // 修正：显示当前实际渲染的数量，而不是默认的 displayCount
                 document.getElementById('display-count').innerText = currentData.length;
                 
                 const loadBtn = document.getElementById('load-more-btn');
